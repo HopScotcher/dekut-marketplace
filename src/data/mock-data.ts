@@ -1,5 +1,13 @@
 import { Product, Category, Order } from '@/lib/types';
 
+// Add status and userId to all products, and assign to mock user
+export const mockUser = {
+  id: 'user-123',
+  name: 'John Doe',
+  email: 'john@example.com',
+  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+};
+
 // Mock Categories
 export const mockCategories: Category[] = [
   {
@@ -84,7 +92,9 @@ export const mockProducts: Product[] = [
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       rating: 4.9,
       reviewCount: 2456
-    }
+    },
+    status: 'published',
+    userId: mockUser.id,
   },
   {
     id: 'prod-2',
@@ -112,7 +122,9 @@ export const mockProducts: Product[] = [
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       rating: 4.9,
       reviewCount: 2456
-    }
+    },
+    status: 'published',
+    userId: mockUser.id,
   },
   {
     id: 'prod-3',
@@ -141,7 +153,9 @@ export const mockProducts: Product[] = [
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       rating: 4.9,
       reviewCount: 2456
-    }
+    },
+    status: 'published',
+    userId: mockUser.id,
   },
   {
     id: 'prod-4',
@@ -169,7 +183,9 @@ export const mockProducts: Product[] = [
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       rating: 4.9,
       reviewCount: 2456
-    }
+    },
+    status: 'published',
+    userId: mockUser.id,
   },
   {
     id: 'prod-5',
@@ -197,7 +213,9 @@ export const mockProducts: Product[] = [
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       rating: 4.9,
       reviewCount: 2456
-    }
+    },
+    status: 'published',
+    userId: mockUser.id,
   },
   {
     id: 'prod-6',
@@ -225,7 +243,9 @@ export const mockProducts: Product[] = [
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       rating: 4.9,
       reviewCount: 2456
-    }
+    },
+    status: 'published',
+    userId: mockUser.id,
   }
 ];
 

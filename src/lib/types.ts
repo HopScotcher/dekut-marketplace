@@ -23,7 +23,17 @@ export interface Product {
     avatar: string;
     rating: number;
     reviewCount: number;
-  }
+  };
+  status: 'draft' | 'published';  
+  userId: string;  
+}
+
+// User related types (mock user)
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
 }
 
 // Category related types

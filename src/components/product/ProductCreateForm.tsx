@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
 import { Upload, X, ImageIcon } from 'lucide-react'
-
+import { mockCategories } from '@/data/mock-data'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
@@ -14,17 +14,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-// import { useToast } from '@/components/ui/use-toast'
 import { toast } from "sonner";
 
+import {Product} from '@/lib/types'
+
 // Predefined categories
-const CATEGORIES = [
-  { id: 'electronics', name: 'Electronics' },
-  { id: 'clothing', name: 'Clothing & Fashion' },
-  { id: 'home', name: 'Home & Garden' },
-  { id: 'sports', name: 'Sports & Recreation' },
-  { id: 'books', name: 'Books & Media' },
-] as const
+// const CATEGORIES = [
+//   { id: 'electronics', name: 'Electronics' },
+//   { id: 'clothing', name: 'Clothing & Fashion' },
+//   { id: 'home', name: 'Home & Garden' },
+//   { id: 'sports', name: 'Sports & Recreation' },
+//   { id: 'books', name: 'Books & Media' },
+// ] as const
 
 // Mock current user
 const MOCK_USER = {
@@ -68,13 +69,14 @@ interface ImageFile {
   base64: string
 }
 
+
 export default function ProductCreateForm() {
   const [images, setImages] = useState<ImageFile[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
-  
+  const [currentStatus, setCurrentStatus] = useState<'draft' | 'published' | null>(null)
+
   const router = useRouter()
-  // const { toast } = useToast()
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -194,16 +196,18 @@ export default function ProductCreateForm() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
   }
 
-  // Form submission
-  const onSubmit = async (data: ProductFormData) => {
+
+  // Enhanced submission handler
+  const handleSubmit = async (data: ProductFormData, status: 'draft' | 'published') => {
     if (images.length === 0) {
-      toast.error( 'Images required',{
+      toast.error('Images required', {
         description: 'Please upload at least one image.',
       })
       return
     }
 
     setIsSubmitting(true)
+    setCurrentStatus(status)
 
     try {
       // Generate product ID
@@ -217,7 +221,7 @@ export default function ProductCreateForm() {
         price: parseFloat(data.price),
         originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : undefined,
         images: images.map(img => img.base64),
-        category: CATEGORIES.find(cat => cat.id === data.category)?.name || '',
+        category: mockCategories.find(cat => cat.id === data.category)?.name || '',
         categoryId: data.category,
         brand: data.brand || undefined,
         rating: 0,
@@ -227,6 +231,8 @@ export default function ProductCreateForm() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         seller: MOCK_USER,
+        status: status,
+        userId: MOCK_USER.id,
       }
 
       // Store in localStorage for now (MVP)
@@ -234,17 +240,20 @@ export default function ProductCreateForm() {
       existingProducts.push(product)
       localStorage.setItem('products', JSON.stringify(existingProducts))
 
-      // Show success toast
-      toast.success('Product listed successfully!',{
-        description: 'Your item has been added to the marketplace.',
-      })
-
-      // Redirect to product detail page
-      router.push(`/products/${productId}`)
-
+      if (status === 'published') {
+        toast.success('Product listed successfully!', {
+          description: 'Your item has been added to the marketplace.',
+        })
+        router.push(`/products/${productId}`)
+      } else {
+        toast.success('Draft saved!', {
+          description: 'Your product draft has been saved.',
+        })
+        router.push('/dashboard')
+      }
     } catch (error) {
       console.error('Error creating product:', error)
-      toast.error('Product was not listed!',{
+      toast.error('Product was not listed!', {
         description: 'Something went wrong. Please try again.',
       })
     } finally {
@@ -254,38 +263,41 @@ export default function ProductCreateForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form className="space-y-8">
         {/* Images Upload Section */}
         <div className="space-y-4">
           <Label className="text-base font-medium">Product Images</Label>
-          
           {/* Upload Zone */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              isDragOver
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-300 hover:border-gray-400'
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <div className="flex flex-col items-center space-y-2">
-              <Upload className="w-8 h-8 text-gray-400" />
-              <div className="text-sm text-gray-600">
-                <span className="font-medium">Click to upload</span> or drag and drop
+          <div className="relative">
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                isDragOver
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <div className="flex flex-col items-center space-y-2">
+                <Upload className="w-8 h-8 text-gray-400" />
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Click to upload</span> or drag and drop
+                </div>
+                <div className="text-xs text-gray-500">
+                  PNG, JPG, JPEG up to 5MB (max 5 images)
+                </div>
               </div>
-              <div className="text-xs text-gray-500">
-                PNG, JPG, JPEG up to 5MB (max 5 images)
-              </div>
+              <input
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg,image/png"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={(e) => handleFileUpload(e.target.files)}
+                tabIndex={-1}
+                style={{ zIndex: 2 }}
+              />
             </div>
-            <input
-              type="file"
-              multiple
-              accept="image/jpeg,image/jpg,image/png"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              onChange={(e) => handleFileUpload(e.target.files)}
-            />
           </div>
 
           {/* Image Previews */}
@@ -310,6 +322,11 @@ export default function ProductCreateForm() {
             </div>
           )}
         </div>
+
+        {/* Show current status if editing (future-proof) */}
+        {currentStatus && (
+          <div className="text-sm text-gray-600">Current status: <span className="font-semibold">{currentStatus}</span></div>
+        )}
 
         {/* Product Name */}
         <FormField
@@ -408,7 +425,7 @@ export default function ProductCreateForm() {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {CATEGORIES.map((category) => (
+                  {mockCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
@@ -482,7 +499,7 @@ export default function ProductCreateForm() {
           )}
         />
 
-        {/* Submit Button */}
+        {/* Dual Submit Buttons */}
         <div className="flex justify-end space-x-4">
           <Button
             type="button"
@@ -492,8 +509,20 @@ export default function ProductCreateForm() {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'List Item'}
+          <Button
+            type="button"
+            disabled={isSubmitting}
+            onClick={form.handleSubmit((data) => handleSubmit(data, 'draft'))}
+            variant="secondary"
+          >
+            {isSubmitting && currentStatus === 'draft' ? 'Saving...' : 'Save as Draft'}
+          </Button>
+          <Button
+            type="button"
+            disabled={isSubmitting}
+            onClick={form.handleSubmit((data) => handleSubmit(data, 'published'))}
+          >
+            {isSubmitting && currentStatus === 'published' ? 'Publishing...' : 'Publish Now'}
           </Button>
         </div>
       </form>
