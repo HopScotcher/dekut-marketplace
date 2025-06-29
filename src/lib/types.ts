@@ -17,6 +17,7 @@ export interface Product {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  location?: string; // Optional location for the product
   seller: {
     id: string;
     name: string;
