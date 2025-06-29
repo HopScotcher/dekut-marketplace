@@ -3,14 +3,20 @@ import ProductCard from "../common/ProductCard";
 import EmptyState from "../common/EmptyState";
 import { Badge } from "../ui/badge";
 
-interface UserProductsGridProps {
+type UserProductsGridProps = {
   products: Product[];
-  status: "draft" | "published";
-}
+  status: "published" | "draft";
+  selectionMode?: boolean;
+  selectedIds?: string[];
+  onToggleSelect?: (productId: string) => void;
+};
 
 export default function UserProductsGrid({
   products,
   status,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
 }: UserProductsGridProps) {
   if (products.length === 0) {
     return (

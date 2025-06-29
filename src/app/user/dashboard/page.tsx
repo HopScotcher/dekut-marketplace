@@ -1,3 +1,5 @@
+"use client"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,14 +8,39 @@ import Link from "next/link";
 import UserProductsGrid from "@/components/user/UserProductsGrid";
 import { getProductsBySeller } from "@/services/productService";
 import { mockUser } from "@/data/mock-data";
+import BulkActionBar from "@/components/user/BulkActionBar";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { useState, useEffect } from "react";
+import { Product } from "@/lib/types";
 
-export default async function DashboardPage() {
+export default function DashboardPageWrapper() {
+  // This wrapper is needed to use hooks in a server component
+  return <DashboardPage />;
+}
+
+function DashboardPage() {
   // In a real app, we'd get the current user from auth context
-  const userProducts = await getProductsBySeller(mockUser.id);
-  const publishedProducts = userProducts.filter(
-    (p) => p.status === "published"
-  );
-  const draftProducts = userProducts.filter((p) => p.status === "draft");
+  // For demo, use client-side state for selection
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getProductsBySeller(mockUser.id).then((userProducts) => {
+      setProducts(userProducts);
+      setLoading(false);
+    });
+  }, []);
+
+  const publishedProducts = products.filter((p) => p.status === "published");
+  const draftProducts = products.filter((p) => p.status === "draft");
+
+  const bulk = useBulkSelection(publishedProducts.map((p) => p.id));
+
+  // Handle bulk delete (for demo, just filter out from state)
+  function handleBulkDelete() {
+    setProducts((prev) => prev.filter((p) => !bulk.selectedIds.includes(p.id)));
+    bulk.clearSelection();
+  }
 
   return (
     <div className="container max-w-7xl mx-auto py-8 space-y-8">
@@ -55,7 +82,22 @@ export default async function DashboardPage() {
         </TabsList>
 
         <TabsContent value="published" className="space-y-4">
-          <UserProductsGrid products={publishedProducts} status="published" />
+          <BulkActionBar
+            selectionMode={bulk.selectionMode}
+            selectedCount={bulk.selectedCount}
+            allSelected={bulk.allSelected}
+            onSelectAll={bulk.selectAllPublished}
+            onClear={bulk.clearSelection}
+            onBulkDelete={handleBulkDelete}
+            onToggleSelectionMode={bulk.toggleSelectionMode}
+          />
+          <UserProductsGrid
+            products={publishedProducts}
+            status="published"
+            selectionMode={bulk.selectionMode}
+            selectedIds={bulk.selectedIds}
+            onToggleSelect={bulk.toggleSelection}
+          />
         </TabsContent>
 
         <TabsContent value="draft" className="space-y-4">
