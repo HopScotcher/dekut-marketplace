@@ -63,7 +63,9 @@ export default function Header() {
 
             {/* User */}
             <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
+              <Link href="/user/dashboard">
+                <User className="h-5 w-5" />
+              </Link>
             </Button>
 
             {/* Mobile Menu */}
