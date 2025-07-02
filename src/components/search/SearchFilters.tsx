@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { ChevronDownIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useSearchStore } from '@/stores/searchStore'
 import Select from 'react-select'
-import ReactSlider from 'react-slider'
 import clsx from 'clsx'
 
 const categories = [
@@ -126,21 +125,35 @@ export default function SearchFilters() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Price Range: ${priceRange[0]} - ${priceRange[1]}
           </label>
-          <div className="px-2">
-            <ReactSlider
-              value={priceRange}
-              onChange={handlePriceChange}
+          <div className="flex space-x-2">
+            <input
+              type="number"
               min={0}
               max={10000}
               step={50}
-              className="horizontal-slider"
-              thumbClassName="slider-thumb"
-              trackClassName="slider-track"
-              renderThumb={(props, state) => (
-                <div {...props} className="slider-thumb">
-                  <span className="slider-thumb-label">${state.valueNow}</span>
-                </div>
-              )}
+              value={priceRange[0]}
+              onChange={e => {
+                const min = Math.max(0, Math.min(Number(e.target.value), priceRange[1]));
+                setPriceRange([min, priceRange[1]]);
+                setFilters({ minPrice: min });
+              }}
+              placeholder="Min"
+              className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <span className="self-center text-gray-500">-</span>
+            <input
+              type="number"
+              min={0}
+              max={10000}
+              step={50}
+              value={priceRange[1]}
+              onChange={e => {
+                const max = Math.min(10000, Math.max(Number(e.target.value), priceRange[0]));
+                setPriceRange([priceRange[0], max]);
+                setFilters({ maxPrice: max });
+              }}
+              placeholder="Max"
+              className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
         </div>

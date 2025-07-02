@@ -7,8 +7,8 @@ import SearchSort from '@/components/search/SearchSort'
 import SearchResults from '@/components/search/SearchResults'
 import { useSearch } from '@/hooks/useSearch'
 
-function SearchContent() {
-  const { performSearch } = useSearch()
+async function SearchContent() {
+  const { performSearch } = await useSearch()
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -44,10 +44,6 @@ export default function SearchPage() {
     </Suspense>
   )
 }
-
-
-
-
 
 
 
@@ -148,5 +144,7 @@ export default function SearchPage() {
 //     </div>
 //   );
 // }
+
+
 
 

@@ -32,6 +32,12 @@ export default function Header() {
             <Link href="/categories" className="text-sm font-medium hover:text-primary transition-colors">
               Categories
             </Link>
+            <Link
+              href="/search"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Search
+</Link>
           </nav>
 
           {/* Search Bar - Desktop */}
