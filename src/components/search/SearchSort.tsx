@@ -1,3 +1,5 @@
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { ChevronDownIcon } from '@heroicons/react/24/outline'

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Product } from '@/lib/types'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'

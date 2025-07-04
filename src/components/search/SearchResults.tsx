@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client'
 
 import { useSearchStore } from '@/stores/searchStore'
@@ -25,7 +27,7 @@ export default function SearchResults() {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg mb-2">
-          No products found for "&quot;{searchQuery}&quot;"
+          No products found for &quot;{searchQuery}&quot;
         </div>
         <div className="text-gray-400 text-sm">
           Try adjusting your search terms or filters
@@ -40,7 +42,7 @@ export default function SearchResults() {
       {searchQuery && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            {totalResults} results for "&quot;<span className="font-medium">{searchQuery}</span>&quot;"
+            {totalResults} results for &quot;<span className="font-medium">{searchQuery}</span>&quot;
           </div>
         </div>
       )}

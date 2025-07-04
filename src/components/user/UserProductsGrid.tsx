@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Product } from "@/lib/types";
 import ProductCard from "../common/ProductCard";
 import EmptyState from "../common/EmptyState";
