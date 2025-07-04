@@ -10,12 +10,20 @@ function getCurrentUserId(req: NextRequest) {
   return req.headers.get('x-user-id') || 'user-123'
 }
 
+// Helper: extract id param from URL
+function getIdFromUrl(req: NextRequest) {
+  const url = req.nextUrl || new URL(req.url)
+  const parts = url.pathname.split('/')
+  return parts[parts.length - 1]
+}
+
 // GET: Single product by ID (published only, or owner's draft)
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest) {
+  const id = getIdFromUrl(req)
   const userId = getCurrentUserId(req)
   try {
     const product = await prisma.product.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { user: true },
     })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -29,15 +37,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // PUT: Update product (owner only)
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest) {
+  const id = getIdFromUrl(req)
   const userId = getCurrentUserId(req)
   try {
     const body = await req.json()
-    const product = await prisma.product.findUnique({ where: { id: params.id } })
+    const product = await prisma.product.findUnique({ where: { id } })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (product.userId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const updated = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: body,
     })
     return NextResponse.json(updated)
@@ -47,13 +56,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE: Delete product (owner only)
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest) {
+  const id = getIdFromUrl(req)
   const userId = getCurrentUserId(req)
   try {
-    const product = await prisma.product.findUnique({ where: { id: params.id } })
+    const product = await prisma.product.findUnique({ where: { id } })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (product.userId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    await prisma.product.delete({ where: { id: params.id } })
+    await prisma.product.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (_error) {
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 })
@@ -61,15 +71,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 }
 
 // PATCH: Toggle product status (draft/published)
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest) {
+  const id = getIdFromUrl(req)
   const userId = getCurrentUserId(req)
   try {
-    const product = await prisma.product.findUnique({ where: { id: params.id } })
+    const product = await prisma.product.findUnique({ where: { id } })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     if (product.userId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     const newStatus = product.status === 'published' ? 'draft' : 'published'
     const updated = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: newStatus },
     })
     return NextResponse.json(updated)

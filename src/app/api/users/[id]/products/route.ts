@@ -6,13 +6,16 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 // GET: User's products with optional status filter
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const { searchParams } = new URL(req.url)
-  const status = searchParams.get('status')
+export async function GET(req: NextRequest) {
+  // Extract user id from URL
+  const url = req.nextUrl || new URL(req.url)
+  const parts = url.pathname.split('/')
+  const userId = parts[parts.length - 2]
+  const status = url.searchParams.get('status')
   try {
-    const user = await prisma.user.findUnique({ where: { id: params.id } })
+    const user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) return NextResponse.json([])
-    const where: import('@prisma/client').Prisma.ProductWhereInput = { userId: params.id }
+    const where: import('@prisma/client').Prisma.ProductWhereInput = { userId }
     if (status === 'draft' || status === 'published') {
       where.status = status as any
     }

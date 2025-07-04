@@ -1,22 +1,18 @@
-'use client'
+"use client";
 
-import React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import ProductDetailLayout from '@/components/features/ProductDetailLayout';
-import { Product } from '@/lib/types';
-import { getProductById } from '@/services/productService';
+import React from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import ProductDetailLayout from "@/components/features/ProductDetailLayout";
+import { Product } from "@/lib/types";
+import { getProductById } from "@/services/productService";
 // import { mockProducts } from '@/data/mock-data';
-
 
 // Props interface for ProductDetailPage
 interface ProductDetailPageProps {
-   params: Promise<{
-      id: string;
-   }>;
+  params: Promise<{
+    id: string;
+  }>;
 }
-
-
- 
 
 // Loading skeleton component
 function ProductDetailSkeleton() {
@@ -37,7 +33,7 @@ function ProductDetailSkeleton() {
             <Skeleton className="h-8 w-full" />
           </div>
         </div>
-        
+
         {/* Right column skeleton */}
         <div className="lg:col-span-2 space-y-6">
           <Skeleton className="h-8 w-3/4" />
@@ -56,11 +52,19 @@ function ProductDetailSkeleton() {
 }
 
 // Error boundary component
-function ProductDetailError({ error, retry }: { error: Error; retry: () => void }) {
+function ProductDetailError({
+  error,
+  retry,
+}: {
+  error: Error;
+  retry: () => void;
+}) {
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="text-center space-y-4">
-        <h1 className="text-2xl font-bold text-red-600">Error Loading Product</h1>
+        <h1 className="text-2xl font-bold text-red-600">
+          Error Loading Product
+        </h1>
         <p className="text-gray-600">{error.message}</p>
         <button
           onClick={retry}
@@ -75,7 +79,7 @@ function ProductDetailError({ error, retry }: { error: Error; retry: () => void 
 
 // Main ProductDetailPage component
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const {id} = React.use(params);
+  const { id } = React.use(params);
   const [product, setProduct] = React.useState<Product | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
@@ -85,9 +89,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       setLoading(true);
       setError(null);
       const productData = await getProductById(id);
-      setProduct(productData);
+      // Ensure plain object for client component
+      setProduct(productData ? JSON.parse(JSON.stringify(productData)) : null);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load product'));
+      setError(
+        err instanceof Error ? err : new Error("Failed to load product")
+      );
     } finally {
       setLoading(false);
     }
@@ -112,8 +119,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     return (
       <main className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-600">Product Not Found</h1>
-          <p className="text-gray-500 mt-2">The product you&apos;re looking for doesn&apos;t exist.</p>
+          <h1 className="text-2xl font-bold text-gray-600">
+            Product Not Found
+          </h1>
+          <p className="text-gray-500 mt-2">
+            The product you&apos;re looking for doesn&apos;t exist.
+          </p>
         </div>
       </main>
     );
