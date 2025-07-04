@@ -8,7 +8,9 @@ import EmptyState from "@/components/common/EmptyState";
 import { mockProducts } from "@/data/mock-data";
 import { Product } from "@/lib/types";
 
-export default function SearchPage() {
+import { Suspense } from "react";
+
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,5 +90,13 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div>Loading search...</div>}>
+      <SearchPageContent />
+    </Suspense>
   );
 }
