@@ -34,7 +34,7 @@ export function useUserProducts(userId: string, status?: string) {
 export function useCreateProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (data: Record<string, any>) => (await axios.post('/api/products', data)).data,
+    mutationFn: async (data: Record<string, unknown>) => (await axios.post('/api/products', data)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
       queryClient.invalidateQueries({ queryKey: ['user-products'] })
@@ -46,7 +46,7 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; [key: string]: any }) =>
+    mutationFn: async ({ id, ...data }: { id: string; [key: string]: unknown }) =>
       (await axios.put(`/api/products/${id}`, data)).data,
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['product', variables.id] })
