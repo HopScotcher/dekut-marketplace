@@ -17,7 +17,7 @@ export default function Header() {
               <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">M</span>
               </div>
-              <span className="font-bold text-xl hidden sm:inline-block">Marketplace</span>
+              <span className="font-bold text-xl hidden sm:inline-block">Dekut Marketplace</span>
             </Link>
           </div>
 

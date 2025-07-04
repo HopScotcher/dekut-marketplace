@@ -23,10 +23,10 @@ export default function HomePage() {
       <section className="bg-gradient-to-r from-primary/10 to-primary/5 py-20">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Discover Amazing Products
+            Buy and Sell Anything Today, For Free
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Shop from thousands of trusted sellers and find exactly what you&apos;re looking for
+            Shop from hundreds of  sellers and find exactly what you&apos;re looking for
           </p>
           <div className="max-w-md mx-auto mb-8">
             <SearchBar placeholder="What are you looking for?" />
@@ -59,7 +59,7 @@ export default function HomePage() {
             <CardContent className="p-6 text-center">
               <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Fast Delivery</h3>
-              <p className="text-gray-600">Quick and reliable shipping to your doorstep</p>
+              <p className="text-gray-600">Quick and reliable shipping to buyers within Dedan Kimathi University</p>
             </CardContent>
           </Card>
           <Card>
