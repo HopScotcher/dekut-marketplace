@@ -38,11 +38,11 @@ export default function SearchFilters() {
     })
   }
   
-  const handleCategoryChange = (option: any) => {
+  const handleCategoryChange = (option: { value: string; label: string } | null) => {
     setFilters({ category: option?.value || '' })
   }
   
-  const handleConditionChange = (option: any) => {
+  const handleConditionChange = (option: { value: string; label: string } | null) => {
     setFilters({ condition: option?.value || '' })
   }
   

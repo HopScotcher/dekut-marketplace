@@ -16,12 +16,20 @@ const sortOptions = [
 export default function SearchSort() {
   const { sortBy, setSortBy, totalResults } = useSearchStore()
   
-  const handleSortChange = (option: any) => {
+  type SortOption = {
+    value: 'relevance' | 'price' | 'date' | 'popularity'
+    label: string
+    direction: 'asc' | 'desc'
+  }
+
+  const handleSortChange = (
+    option: typeof sortOptions[number] | null
+  ) => {
     if (option) {
       setSortBy({
-        value: option.value,
+        value: option.value as SortOption['value'],
         label: option.label,
-        direction: option.direction
+        direction: option.direction as SortOption['direction']
       })
     }
   }

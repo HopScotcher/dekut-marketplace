@@ -25,7 +25,7 @@ export default function SearchResults() {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg mb-2">
-          No products found for "{searchQuery}"
+          No products found for "\{searchQuery}\"
         </div>
         <div className="text-gray-400 text-sm">
           Try adjusting your search terms or filters
@@ -40,7 +40,7 @@ export default function SearchResults() {
       {searchQuery && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            {totalResults} results for "<span className="font-medium">{searchQuery}</span>"
+            {totalResults} results for "\<span className="font-medium">{searchQuery}</span>\"
           </div>
         </div>
       )}

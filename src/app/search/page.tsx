@@ -7,9 +7,8 @@ import SearchSort from '@/components/search/SearchSort'
 import SearchResults from '@/components/search/SearchResults'
 import { useSearch } from '@/hooks/useSearch'
 
-async function SearchContent() {
-  const { performSearch } = await useSearch()
-  
+function SearchContent() {
+  const { performSearch } = useSearch();
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Search header */}

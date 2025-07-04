@@ -10,9 +10,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     const user = await prisma.user.findUnique({ where: { id: params.id } })
     if (!user) return NextResponse.json([])
-    const where: any = { userId: params.id }
+    const where: import('@prisma/client').Prisma.ProductWhereInput = { userId: params.id }
     if (status === 'draft' || status === 'published') {
-      where.status = status
+      where.status = status as any
     }
     const products = await prisma.product.findMany({
       where,
