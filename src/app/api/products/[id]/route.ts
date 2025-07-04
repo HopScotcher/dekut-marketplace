@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json(product)
     }
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 })
   }
 }
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       data: body,
     })
     return NextResponse.json(updated)
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 })
   }
 }
@@ -54,7 +54,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (product.userId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     await prisma.product.delete({ where: { id: params.id } })
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 })
   }
 }
@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: { status: newStatus },
     })
     return NextResponse.json(updated)
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: 'Failed to toggle status' }, { status: 500 })
   }
 }
