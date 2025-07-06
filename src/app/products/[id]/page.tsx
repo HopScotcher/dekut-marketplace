@@ -1,18 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProductDetailLayout from "@/components/features/ProductDetailLayout";
 import { Product } from "@/lib/types";
-import { getProductById } from "@/services/productService";
-// import { mockProducts } from '@/data/mock-data';
-
-// Props interface for ProductDetailPage
-interface ProductDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+import { useProduct, useProducts } from "@/hooks/useProducts";
+ 
 
 // Loading skeleton component
 function ProductDetailSkeleton() {
@@ -78,40 +71,23 @@ function ProductDetailError({
 }
 
 // Main ProductDetailPage component
-export default function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { id } = React.use(params);
-  const [product, setProduct] = React.useState<Product | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<Error | null>(null);
+export default function ProductDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const { id } = params;
+ 
+  const { data: product, isLoading, error, refetch } = useProduct(id);
 
-  const loadProduct = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const productData = await getProductById(id);
-      // Ensure plain object for client component
-      setProduct(productData ? JSON.parse(JSON.stringify(productData)) : null);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error("Failed to load product")
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  React.useEffect(() => {
-    loadProduct();
-  }, [loadProduct]);
+  // Loading state
+  if (isLoading) {
+    return <ProductDetailSkeleton />;
+  }
 
   // Error state
   if (error) {
-    return <ProductDetailError error={error} retry={loadProduct} />;
-  }
-
-  // Loading state
-  if (loading) {
-    return <ProductDetailSkeleton />;
+    return <ProductDetailError error={error} retry={refetch} />;
   }
 
   // Success state

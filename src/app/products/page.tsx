@@ -10,7 +10,7 @@ export default function ProductsPage() {
           Discover our complete collection of {mockProducts.length} amazing products
         </p>
       </div>
-      <ProductGrid products={mockProducts} />
+      <ProductGrid products={JSON.parse(JSON.stringify(mockProducts))} />
     </div>
   );
 }
