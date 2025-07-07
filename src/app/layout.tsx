@@ -8,8 +8,8 @@ import Footer from "@/components/layout/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Marketplace - Your Trusted Online Store",
-  description: "Discover amazing products from trusted sellers",
+  title: "Dekut Marketplace",
+  description: "Discover quality products from trusted sellers",
 };
 
 export default function RootLayout({

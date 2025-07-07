@@ -8,14 +8,16 @@ import { debounce } from 'lodash'
 interface SearchBarProps {
   placeholder?: string
   onSearch?: (query: string) => void
+  initialQuery?: string
 }
 
 export default function SearchBar({ 
   placeholder = "Search products...",
-  onSearch 
+  onSearch,
+  initialQuery = "",
 }: SearchBarProps) {
   const { searchQuery, setSearchQuery } = useSearchStore()
-  const [localQuery, setLocalQuery] = useState(searchQuery)
+  const [localQuery, setLocalQuery] = useState(initialQuery || searchQuery)
   
   // Debounced search to avoid too many API calls
   const debouncedSearch = useCallback(
@@ -27,8 +29,17 @@ export default function SearchBar({
   )
   
   useEffect(() => {
+    if (initialQuery !== undefined ){
+      setLocalQuery(initialQuery)
+      setSearchQuery(initialQuery)
+    }
+     
+  }, [initialQuery, setSearchQuery])
+
+
+  useEffect(()=>{
     debouncedSearch(localQuery)
-    return () => {
+    return ()=> {
       debouncedSearch.cancel()
     }
   }, [localQuery, debouncedSearch])

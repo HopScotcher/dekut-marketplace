@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import {  Search } from 'lucide-react';
+import Link from 'next/link';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -23,11 +24,7 @@ export default function SearchBar({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      if (onSearch) {
-        onSearch(query.trim());
-      } else {
-        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-      }
+       router.push(`/search/${encodeURIComponent(query.trim())}`);
     }
   };
 
