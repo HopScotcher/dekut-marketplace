@@ -91,6 +91,26 @@ export default function RegisterForm() {
 
   return (
     <div className="space-y-6">
+
+      
+      <OAuthButton provider="google">
+        Continue with Google
+      </OAuthButton>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <Separator />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-gray-500">OR</span>
+        </div>
+      </div>
+
+
+
+<div>
+  <h2 className='font-bold'>Create your account</h2>
+</div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -101,7 +121,7 @@ export default function RegisterForm() {
                 <FormLabel>Full Name</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="Enter your full name"
+                    // placeholder="Enter your full name"
                     disabled={isLoading}
                     {...field}
                   />
@@ -120,7 +140,7 @@ export default function RegisterForm() {
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="Enter your email"
+                    // placeholder="Enter your email"
                     disabled={isLoading}
                     {...field}
                   />
@@ -140,7 +160,7 @@ export default function RegisterForm() {
                   <FormControl>
                     <Input
                       type="tel"
-                      placeholder="Enter your phone number"
+                      // placeholder="Enter your phone number"
                       disabled={isLoading}
                       {...field}
                     />
@@ -158,7 +178,7 @@ export default function RegisterForm() {
                   <FormLabel>Location (Optional)</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter your location"
+                      // placeholder="Enter your location"
                       disabled={isLoading}
                       {...field}
                     />
@@ -179,7 +199,7 @@ export default function RegisterForm() {
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Create a password"
+                      // placeholder="Create a password"
                       disabled={isLoading}
                       {...field}
                     />
@@ -215,7 +235,7 @@ export default function RegisterForm() {
                   <div className="relative">
                     <Input
                       type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm your password"
+                      // placeholder="Confirm your password"
                       disabled={isLoading}
                       {...field}
                     />
@@ -246,18 +266,7 @@ export default function RegisterForm() {
         </form>
       </Form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500">Or continue with</span>
-        </div>
-      </div>
-
-      <OAuthButton provider="google">
-        Continue with Google
-      </OAuthButton>
+      
     </div>
   )
 }

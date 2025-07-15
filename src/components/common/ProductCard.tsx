@@ -49,11 +49,11 @@ export default function ProductCard({
             </Badge>
           </div>
 
-          <Link href={`/products/${product.id}`}>
+          <div>
             <h3 className="font-semibold text-lg line-clamp-2 hover:text-primary transition-colors">
               {product.name}
             </h3>
-          </Link>
+          </div>
 
           <p className="text-sm text-gray-600 line-clamp-2">
             {product.description}

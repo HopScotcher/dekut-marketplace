@@ -60,11 +60,11 @@ export default function Header() {
             </Button>
 
             {/* Cart */}
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
-              </span>
+            <Button variant="default" size="lg" className="">
+              <Link href='/auth/register'>
+               Sign up
+              
+              </Link>
             </Button>
 
             {/* User */}
@@ -77,7 +77,7 @@ export default function Header() {
             {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon" className="md:hidden">  
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>

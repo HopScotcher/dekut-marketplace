@@ -20,8 +20,9 @@
         "name": "next"
       }
     ],
+    "baseUrl": "./src", // Ensure baseUrl points to the src directory
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["*"] // Map @/ to the src directory
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
