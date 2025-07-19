@@ -56,6 +56,7 @@ export default function RegisterForm() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.log(errorData.message)
         throw new Error(errorData.message || 'Registration failed')
       }
 

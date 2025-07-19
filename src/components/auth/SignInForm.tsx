@@ -161,10 +161,10 @@ export default function SignInForm() {
         Continue with Google
       </OAuthButton>
 
-      {/* <ForgotPasswordDialog
+      <ForgotPasswordDialog
         open={showForgotPassword}
         onOpenChange={setShowForgotPassword}
-      /> */}
+      />
     </div>
   )
 }
