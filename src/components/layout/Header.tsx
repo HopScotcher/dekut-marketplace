@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, ShoppingCart, User, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import UserAuth from '../auth/UserAuth';
 
 export default function Header() {
   return (
@@ -37,7 +38,7 @@ export default function Header() {
               className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
             >
               Search
-</Link>
+              </Link>
           </nav>
 
           {/* Search Bar - Desktop */}
@@ -59,7 +60,7 @@ export default function Header() {
               <Search className="h-5 w-5" />
             </Button>
 
-            {/* Cart */}
+            {/* Cart
             <Button variant="default" size="lg" className="">
               <Link href='/auth/register'>
                Sign up
@@ -67,12 +68,14 @@ export default function Header() {
               </Link>
             </Button>
 
-            {/* User */}
+            {/* User 
             <Button variant="ghost" size="icon">
               <Link href="/user/dashboard">
                 <User className="h-5 w-5" />
               </Link>
-            </Button>
+            </Button> */}
+
+            <UserAuth/>
 
             {/* Mobile Menu */}
             <Sheet>
@@ -108,6 +111,7 @@ export default function Header() {
           </div>
         </div>
       </div>
+      {/* <UserAuth /> */}
     </header>
   );
 }

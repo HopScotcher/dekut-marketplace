@@ -4,7 +4,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
- 
+// import { SessionProvider } from "next-auth/react";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -20,11 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Header />
-        <Providers>
-          <main>{children}</main>
-        </Providers>
-        <Footer />
+        {/* <SessionProvider> */}
+          <Providers>
+          <Header />
+            <main>{children}</main>
+          <Footer />
+          </Providers>
+        {/* </SessionProvider> */}
       </body>
     </html>
   );

@@ -96,7 +96,7 @@ export default function HomePage() {
             </Link>
           </Button>
         </div>
-        <ProductGrid products={mockProducts} />
+        <ProductGrid />
       </section>
     </div>
   );

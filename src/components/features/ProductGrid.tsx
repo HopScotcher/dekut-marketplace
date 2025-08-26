@@ -1,15 +1,19 @@
+"use client"
+
 import { Product } from '@/lib/types';
 import ProductCard from '@/components/common/ProductCard';
 import EmptyState from '@/components/common/EmptyState';
 import Link from 'next/link';
+import { useProducts } from '@/hooks/useProducts';
 
 interface ProductGridProps {
   products: Product[];
   loading?: boolean;
 }
 
-export default function ProductGrid({ products, loading = false }: ProductGridProps) {
-  if (loading) {
+export default function ProductGrid() {
+  const {data: products, isLoading} = useProducts();
+  if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {[...Array(8)].map((_, i) => (
@@ -32,7 +36,7 @@ export default function ProductGrid({ products, loading = false }: ProductGridPr
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {products.map((product) => (
+      {products.map((product: Product) => (
         <Link key={product.id} href={`/products/${product.id}`}>
         <ProductCard key={product.id} product={product} />
         </Link>
