@@ -18,12 +18,12 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   location?: string; // Optional location for the product
-  seller: {
+  user: {
     id: string;
     name: string;
     avatar: string;
-    rating: number;
-    reviewCount: number;
+    // rating: number;
+    // reviewCount: number;
   };
   status: 'draft' | 'published';  
   userId: string;  

@@ -12,14 +12,14 @@ interface ProductDetailLayoutProps {
 }
 
 // SellerInfoCard component
-function SellerInfoCard({ seller }: { seller: Product['seller'] }) {
+function SellerInfoCard({ seller }: { seller: Product['user'] }) {
   return (
     <Card>
       <CardContent className="p-6">
         <div className="space-y-4">
           <div className="flex items-center space-x-3">
             <img
-              src={seller.avatar}
+              src={seller.avatar ?? '/seller-profile.png'}
               alt={seller.name}
               className="h-12 w-12 rounded-full object-cover"
             />
@@ -27,8 +27,8 @@ function SellerInfoCard({ seller }: { seller: Product['seller'] }) {
               <h3 className="font-semibold text-lg">{seller.name}</h3>
               <div className="flex items-center space-x-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-medium">{seller.rating}</span>
-                <span className="text-sm text-gray-500">({seller.reviewCount} reviews)</span>
+                {/* <span className="text-sm font-medium">{user.rating}</span>
+                <span className="text-sm text-gray-500">({user.reviewCount} reviews)</span> */}
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@ function ProductImageCarousel({ images, title }: { images: string[]; title: stri
         <img
           src={images[currentImage]}
           alt={`${title} - Image ${currentImage + 1}`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
       </div>
       
@@ -136,15 +136,15 @@ function ProductDescription({ description }: { description: string }) {
 function ProductCTA() {
   return (
     <div className="space-y-3">
-      <div className="flex space-x-3">
-        <Button className="flex-1" size="lg">
+      <div className="flex flex-col justify-center items-center space-y-3">
+        <Button className=" w-50" size="lg">
           Contact Seller
         </Button>
-         
-      </div>
-      <Button variant="ghost" className="w-full" size="sm">
+         <Button variant="ghost" className="w-50" size="lg">
         Add to Wishlist
       </Button>
+      </div>
+      
     </div>
   );
 }
@@ -155,13 +155,13 @@ export default function ProductDetailLayout({ product }: ProductDetailLayoutProp
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Left column - Seller Info */}
       <div className="lg:col-span-1">
-        <SellerInfoCard seller={product.seller} />
+        <SellerInfoCard seller={product.user} />
       </div>
 
       {/* Right column - Product Content */}
       <div className="lg:col-span-2 space-y-6">
         <ProductHeader product={product} />
-        <ProductImageCarousel images={product.images} title={product.name} />
+        <ProductImageCarousel images={product.images } title={product.name} />
         <ProductPrice price={product.price} />
         <ProductDescription description={product.description} />
         <ProductCTA />
