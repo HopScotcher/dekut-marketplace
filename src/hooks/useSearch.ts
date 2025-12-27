@@ -2,9 +2,9 @@
  * useSearch Hook - Calls .NET backend search API
  * Replaces client-side Fuse.js search with server-side full-text search
  */
-import { useEffect, useCallback } from 'react'
-import { useSearchStore } from '@/stores/searchStore'
-import { searchProducts } from '@/services/productService'
+import { useEffect, useCallback } from "react";
+import { useSearchStore } from "@/stores/searchStore";
+import { searchProducts } from "@/services/productService";
 
 export function useSearch() {
   const {
@@ -13,11 +13,11 @@ export function useSearch() {
     sortBy,
     currentPage,
     setSearchResults,
-    setLoading
-  } = useSearchStore()
+    setLoading,
+  } = useSearchStore();
 
   const performSearch = useCallback(async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       // Call .NET backend search endpoint
       const result = await searchProducts({
@@ -27,22 +27,22 @@ export function useSearch() {
         maxPrice: filters.maxPrice,
         condition: filters.condition ? [filters.condition] : undefined,
         location: filters.location,
-        sortBy: sortBy.value as 'price' | 'date' | 'relevance',
+        sortBy: sortBy.value as "price" | "date" | "relevance",
         sortOrder: sortBy.direction,
         page: currentPage,
-        pageSize: 20
-      })
-      
-      setSearchResults(result.products, result.totalCount)
+        pageSize: 20,
+      });
+
+      setSearchResults(result.products, result.totalCount);
     } catch (error) {
-      console.error('Search error:', error)
-      setSearchResults([], 0)
+      console.error("Search error:", error);
+      setSearchResults([], 0);
     }
-  }, [searchQuery, filters, sortBy, currentPage, setSearchResults, setLoading])
+  }, [searchQuery, filters, sortBy, currentPage, setSearchResults, setLoading]);
 
   useEffect(() => {
-    performSearch()
-  }, [performSearch])
+    performSearch();
+  }, [performSearch]);
 
-  return { performSearch }
+  return { performSearch };
 }

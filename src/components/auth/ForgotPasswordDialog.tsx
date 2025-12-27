@@ -1,29 +1,42 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
-export default function ForgotPasswordDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const [email, setEmail] = useState('');
+export default function ForgotPasswordDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const { forgotPassword } = await import('@/services/authService');
-      
+      const { forgotPassword } = await import("@/services/authService");
+
       const result = await forgotPassword({ email });
-      
-      toast.success('Password reset email sent!', {
-        description: result.message || 'Check your inbox for further instructions.',
+
+      toast.success("Password reset email sent!", {
+        description:
+          result.message || "Check your inbox for further instructions.",
       });
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Forgot password error:', error);
+      console.error("Forgot password error:", error);
       const errorMessage = error.response?.data?.message || error.message;
-      toast.error('Failed to send email', {
-        description: errorMessage || 'An error occurred. Please try again.',
+      toast.error("Failed to send email", {
+        description: errorMessage || "An error occurred. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -38,7 +51,8 @@ export default function ForgotPasswordDialog({ open, onOpenChange }: { open: boo
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Enter your email address below, and we will send you instructions to reset your password.
+            Enter your email address below, and we will send you instructions to
+            reset your password.
           </p>
           <Input
             type="email"
@@ -49,11 +63,15 @@ export default function ForgotPasswordDialog({ open, onOpenChange }: { open: boo
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isLoading || !email}>
-            {isLoading ? 'Sending...' : 'Send Reset Link'}
+            {isLoading ? "Sending..." : "Send Reset Link"}
           </Button>
         </DialogFooter>
       </DialogContent>

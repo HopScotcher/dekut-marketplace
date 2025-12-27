@@ -1,24 +1,37 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useRouter } from 'next/navigation'
-import { Upload, X, ImageIcon } from 'lucide-react'
-import { mockCategories } from '@/data/mock-data'
-import { Button } from '@/components/ui/button'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Label } from '@/components/ui/label'
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import { Upload, X, ImageIcon } from "lucide-react";
+import { mockCategories } from "@/data/mock-data";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-import {Product} from '@/lib/types'
+import { Product } from "@/lib/types";
 
 // Predefined categories
 // const CATEGORIES = [
@@ -31,248 +44,268 @@ import {Product} from '@/lib/types'
 
 // Mock current user
 const MOCK_USER = {
-  id: 'user-123',
-  name: 'John Doe',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+  id: "user-123",
+  name: "John Doe",
+  avatar:
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
   rating: 4.8,
   reviewCount: 127,
-}
+};
 
 // Form validation schema
 const productSchema = z.object({
-  name: z.string().min(1, 'Product name is required').max(100, 'Name must be less than 100 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters').max(1000, 'Description must be less than 1000 characters'),
+  name: z
+    .string()
+    .min(1, "Product name is required")
+    .max(100, "Name must be less than 100 characters"),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters")
+    .max(1000, "Description must be less than 1000 characters"),
   price: z.string().refine((val) => {
-    const num = parseFloat(val)
-    return !isNaN(num) && num > 0
-  }, 'Price must be a valid positive number'),
+    const num = parseFloat(val);
+    return !isNaN(num) && num > 0;
+  }, "Price must be a valid positive number"),
   originalPrice: z
     .string()
     .optional()
     .refine((val) => {
-      if (val === undefined || val === '') return true
-      const num = parseFloat(val)
-      return !isNaN(num) && num > 0
-    }, 'Original price must be a valid positive number'),
-  category: z.string().min(1, 'Please select a category'),
-  condition: z.enum(['new', 'used', 'refurbished'], {
-    required_error: 'Please select a condition',
+      if (val === undefined || val === "") return true;
+      const num = parseFloat(val);
+      return !isNaN(num) && num > 0;
+    }, "Original price must be a valid positive number"),
+  category: z.string().min(1, "Please select a category"),
+  condition: z.enum(["new", "used", "refurbished"], {
+    required_error: "Please select a condition",
   }),
   brand: z.string().optional(),
   tags: z.string().optional(),
-})
+});
 
-type ProductFormData = z.infer<typeof productSchema>
+type ProductFormData = z.infer<typeof productSchema>;
 
 interface ImageFile {
-  id: string
-  file: File
-  preview: string
-  base64: string
+  id: string;
+  file: File;
+  preview: string;
+  base64: string;
 }
 
-
 export default function ProductCreateForm() {
-  const [images, setImages] = useState<ImageFile[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [currentStatus, setCurrentStatus] = useState<'draft' | 'published' | null>(null)
+  const [images, setImages] = useState<ImageFile[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<
+    "draft" | "published" | null
+  >(null);
 
-  const router = useRouter()
+  const router = useRouter();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      price: '',
-      originalPrice: '',
-      category: '',
-      condition: 'used',
-      brand: '',
-      tags: '',
+      name: "",
+      description: "",
+      price: "",
+      originalPrice: "",
+      category: "",
+      condition: "used",
+      brand: "",
+      tags: "",
     },
-  })
+  });
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = error => reject(error)
-    })
-  }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   // Handle file upload
   const handleFileUpload = async (files: FileList | null) => {
-    if (!files) return
+    if (!files) return;
 
-    const validFiles = Array.from(files).filter(file => {
+    const validFiles = Array.from(files).filter((file) => {
       // Check file type
-      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-        toast.error('Invalid file type', {
-          description: 'Please upload only JPG, JPEG, or PNG images.',
-        })
-        return false
+      if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
+        toast.error("Invalid file type", {
+          description: "Please upload only JPG, JPEG, or PNG images.",
+        });
+        return false;
       }
 
       // Check file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File too large', {
-          description: 'Please upload images smaller than 5MB.',
-
-        }
-        )
-        return false
+        toast.error("File too large", {
+          description: "Please upload images smaller than 5MB.",
+        });
+        return false;
       }
 
-      return true
-    })
+      return true;
+    });
 
     // Check total image limit
     if (images.length + validFiles.length > 5) {
-      toast.error('Too many images', {
-
-        description:'Upload a maximum 5 images.',
-        
-      })
-      return
+      toast.error("Too many images", {
+        description: "Upload a maximum 5 images.",
+      });
+      return;
     }
 
     // Process files
-    const newImages: ImageFile[] = []
+    const newImages: ImageFile[] = [];
     for (const file of validFiles) {
       try {
-        const base64 = await fileToBase64(file)
+        const base64 = await fileToBase64(file);
         const imageFile: ImageFile = {
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           file,
           preview: URL.createObjectURL(file),
           base64,
-        }
-        newImages.push(imageFile)
+        };
+        newImages.push(imageFile);
       } catch (error) {
-        console.error('Error converting file to base64:', error)
-        toast.error('Upload error', {
-          description: 'Failed to process image. Please try again.'
-        })
+        console.error("Error converting file to base64:", error);
+        toast.error("Upload error", {
+          description: "Failed to process image. Please try again.",
+        });
       }
     }
 
-    setImages(prev => [...prev, ...newImages])
-  }
+    setImages((prev) => [...prev, ...newImages]);
+  };
 
   // Handle drag and drop
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }
+    e.preventDefault();
+    setIsDragOver(true);
+  };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }
+    e.preventDefault();
+    setIsDragOver(false);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    handleFileUpload(e.dataTransfer.files)
-  }
+    e.preventDefault();
+    setIsDragOver(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
 
   // Remove image
   const removeImage = (id: string) => {
-    setImages(prev => {
-      const updated = prev.filter(img => img.id !== id)
+    setImages((prev) => {
+      const updated = prev.filter((img) => img.id !== id);
       // Clean up preview URLs
-      const removed = prev.find(img => img.id === id)
+      const removed = prev.find((img) => img.id === id);
       if (removed) {
-        URL.revokeObjectURL(removed.preview)
+        URL.revokeObjectURL(removed.preview);
       }
-      return updated
-    })
-  }
+      return updated;
+    });
+  };
 
   // Generate unique ID
   const generateId = (): string => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
-  }
-
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+  };
 
   // Enhanced submission handler
-  const handleSubmit = async (data: ProductFormData, status: 'draft' | 'published') => {
+  const handleSubmit = async (
+    data: ProductFormData,
+    status: "draft" | "published"
+  ) => {
     if (images.length === 0) {
-      toast.error('Images required', {
-        description: 'Please upload at least one image.',
-      })
-      return
+      toast.error("Images required", {
+        description: "Please upload at least one image.",
+      });
+      return;
     }
 
-    setIsSubmitting(true)
-    setCurrentStatus(status)
+    setIsSubmitting(true);
+    setCurrentStatus(status);
 
     try {
       // Step 1: Upload images to .NET backend
-      const { uploadFiles } = await import('@/lib/apiClient');
-      const imageFiles = images.map(img => img.file);
-      
-      toast.info('Uploading images...', {
-        description: 'Please wait while we upload your images.',
+      const { uploadFiles } = await import("@/lib/apiClient");
+      const imageFiles = images.map((img) => img.file);
+
+      toast.info("Uploading images...", {
+        description: "Please wait while we upload your images.",
       });
-      
-      const imageUrls = await uploadFiles('/api/upload/images', imageFiles);
+
+      const imageUrls = await uploadFiles("/api/upload/images", imageFiles);
 
       // Step 2: Get current user from session
-      const { useSession } = await import('next-auth/react');
-      const session = await import('next-auth/react').then(m => m.getSession());
-      
+      const { useSession } = await import("next-auth/react");
+      const session = await import("next-auth/react").then((m) =>
+        m.getSession()
+      );
+
       if (!session?.user?.id) {
-        toast.error('Authentication required', {
-          description: 'Please sign in to create a product.',
+        toast.error("Authentication required", {
+          description: "Please sign in to create a product.",
         });
-        router.push('/auth/signin');
+        router.push("/auth/signin");
         return;
       }
 
       // Step 3: Create product via .NET API
-      const { api } = await import('@/lib/apiClient');
+      const { api } = await import("@/lib/apiClient");
       const productData = {
         name: data.name,
         description: data.description,
         price: parseFloat(data.price),
-        originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : undefined,
+        originalPrice: data.originalPrice
+          ? parseFloat(data.originalPrice)
+          : undefined,
         images: imageUrls,
-        category: mockCategories.find(cat => cat.id === data.category)?.name || '',
+        category:
+          mockCategories.find((cat) => cat.id === data.category)?.name || "",
         brand: data.brand || undefined,
         condition: data.condition,
-        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+        tags: data.tags
+          ? data.tags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean)
+          : [],
         status: status,
       };
 
-      const createdProduct = await api.post<Product>('/api/products', productData);
+      const createdProduct = await api.post<Product>(
+        "/api/products",
+        productData
+      );
 
-      if (status === 'published') {
-        toast.success('Product listed successfully!', {
-          description: 'Your item has been added to the marketplace.',
-        })
-        router.push(`/products/${createdProduct.id}`)
+      if (status === "published") {
+        toast.success("Product listed successfully!", {
+          description: "Your item has been added to the marketplace.",
+        });
+        router.push(`/products/${createdProduct.id}`);
       } else {
-        toast.success('Draft saved!', {
-          description: 'Your product draft has been saved.',
-        })
-        router.push('/user/dashboard')
+        toast.success("Draft saved!", {
+          description: "Your product draft has been saved.",
+        });
+        router.push("/user/dashboard");
       }
     } catch (error: any) {
-      console.error('Error creating product:', error)
-      const errorMessage = error.message || 'Something went wrong. Please try again.';
-      toast.error('Product was not listed!', {
+      console.error("Error creating product:", error);
+      const errorMessage =
+        error.message || "Something went wrong. Please try again.";
+      toast.error("Product was not listed!", {
         description: errorMessage,
-      })
+      });
     } finally {
-      setIsSubmitting(false)
-      setCurrentStatus(null)
+      setIsSubmitting(false);
+      setCurrentStatus(null);
     }
-  }
+  };
 
   return (
     <Form {...form}>
@@ -285,8 +318,8 @@ export default function ProductCreateForm() {
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                 isDragOver
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-300 hover:border-gray-400"
               }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -295,7 +328,8 @@ export default function ProductCreateForm() {
               <div className="flex flex-col items-center space-y-2">
                 <Upload className="w-8 h-8 text-gray-400" />
                 <div className="text-sm text-gray-600">
-                  <span className="font-medium">Click to upload</span> or drag and drop
+                  <span className="font-medium">Click to upload</span> or drag
+                  and drop
                 </div>
                 <div className="text-xs text-gray-500">
                   PNG, JPG, JPEG up to 5MB (max 5 images)
@@ -338,7 +372,10 @@ export default function ProductCreateForm() {
 
         {/* Show current status if editing (future-proof) */}
         {currentStatus && (
-          <div className="text-sm text-gray-600">Current status: <span className="font-semibold">{currentStatus}</span></div>
+          <div className="text-sm text-gray-600">
+            Current status:{" "}
+            <span className="font-semibold">{currentStatus}</span>
+          </div>
         )}
 
         {/* Product Name */}
@@ -385,7 +422,9 @@ export default function ProductCreateForm() {
                 <FormLabel>Price *</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      $
+                    </span>
                     <Input
                       type="number"
                       step="0.01"
@@ -408,7 +447,9 @@ export default function ProductCreateForm() {
                 <FormLabel>Original Price (optional)</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      $
+                    </span>
                     <Input
                       type="number"
                       step="0.01"
@@ -505,7 +546,10 @@ export default function ProductCreateForm() {
             <FormItem>
               <FormLabel>Tags (optional)</FormLabel>
               <FormControl>
-                <Input placeholder="Enter tags separated by commas" {...field} />
+                <Input
+                  placeholder="Enter tags separated by commas"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -525,20 +569,26 @@ export default function ProductCreateForm() {
           <Button
             type="button"
             disabled={isSubmitting}
-            onClick={form.handleSubmit((data) => handleSubmit(data, 'draft'))}
+            onClick={form.handleSubmit((data) => handleSubmit(data, "draft"))}
             variant="secondary"
           >
-            {isSubmitting && currentStatus === 'draft' ? 'Saving...' : 'Save as Draft'}
+            {isSubmitting && currentStatus === "draft"
+              ? "Saving..."
+              : "Save as Draft"}
           </Button>
           <Button
             type="button"
             disabled={isSubmitting}
-            onClick={form.handleSubmit((data) => handleSubmit(data, 'published'))}
+            onClick={form.handleSubmit((data) =>
+              handleSubmit(data, "published")
+            )}
           >
-            {isSubmitting && currentStatus === 'published' ? 'Publishing...' : 'Publish Now'}
+            {isSubmitting && currentStatus === "published"
+              ? "Publishing..."
+              : "Publish Now"}
           </Button>
         </div>
       </form>
     </Form>
-  )
+  );
 }

@@ -1,47 +1,54 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useRouter } from 'next/navigation'
-import { Eye, EyeOff } from 'lucide-react'
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
-import { Button } from '@/components/ui/button'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import { registerSchema, type RegisterFormData } from '@/lib/validations'
-import OAuthButton from '@/components/auth/OAuthButton'
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { registerSchema, type RegisterFormData } from "@/lib/validations";
+import OAuthButton from "@/components/auth/OAuthButton";
 // import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator'
-import { toast } from 'sonner'
+import { toast } from "sonner";
 
 export default function RegisterForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const router = useRouter();
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      phone: '',
-      location: '',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      phone: "",
+      location: "",
     },
-  })
+  });
 
-  const passwordValue = form.watch('password')
+  const passwordValue = form.watch("password");
 
   const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const { registerUser } = await import('@/services/authService');
-      
+      const { registerUser } = await import("@/services/authService");
+
       await registerUser({
         name: data.name,
         email: data.email,
@@ -50,37 +57,35 @@ export default function RegisterForm() {
         location: data.location,
       });
 
-      toast.success('Account created successfully!', {
-        description: 'Please sign in with your new account.',
-      })
+      toast.success("Account created successfully!", {
+        description: "Please sign in with your new account.",
+      });
 
-      router.push('/auth/signin')
+      router.push("/auth/signin");
     } catch (error: any) {
-      console.error('Registration error:', error)
-      
+      console.error("Registration error:", error);
+
       const errorMessage = error.response?.data?.message || error.message;
-      
-      if (errorMessage?.includes('already exists')) {
-        toast.error('Account already exists', {
-          description: 'An account with this email already exists. Please sign in instead.',
-        })
+
+      if (errorMessage?.includes("already exists")) {
+        toast.error("Account already exists", {
+          description:
+            "An account with this email already exists. Please sign in instead.",
+        });
       } else {
-        toast.error('Registration failed', {
-          description: errorMessage || 'An unexpected error occurred. Please try again.',
-        })
+        toast.error("Registration failed", {
+          description:
+            errorMessage || "An unexpected error occurred. Please try again.",
+        });
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
-
-      
-      <OAuthButton provider="google">
-        Continue with Google
-      </OAuthButton>
+      <OAuthButton provider="google">Continue with Google</OAuthButton>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
@@ -91,11 +96,9 @@ export default function RegisterForm() {
         </div>
       </div>
 
-
-
-<div>
-  <h2 className='font-bold'>Create your account</h2>
-</div>
+      <div>
+        <h2 className="font-bold">Create your account</h2>
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -183,7 +186,7 @@ export default function RegisterForm() {
                 <FormControl>
                   <div className="relative">
                     <Input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       // placeholder="Create a password"
                       disabled={isLoading}
                       {...field}
@@ -219,7 +222,7 @@ export default function RegisterForm() {
                 <FormControl>
                   <div className="relative">
                     <Input
-                      type={showConfirmPassword ? 'text' : 'password'}
+                      type={showConfirmPassword ? "text" : "password"}
                       // placeholder="Confirm your password"
                       disabled={isLoading}
                       {...field}
@@ -229,7 +232,9 @@ export default function RegisterForm() {
                       variant="ghost"
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       disabled={isLoading}
                     >
                       {showConfirmPassword ? (
@@ -246,12 +251,10 @@ export default function RegisterForm() {
           />
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Creating account...' : 'Create Account'}
+            {isLoading ? "Creating account..." : "Create Account"}
           </Button>
         </form>
       </Form>
-
-      
     </div>
-  )
+  );
 }

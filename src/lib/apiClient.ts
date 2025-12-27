@@ -1,18 +1,23 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getSession } from 'next-auth/react';
+import axios, {
+  AxiosInstance,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
+import { getSession } from "next-auth/react";
 
 /**
  * Base API client for .NET backend
  * Handles authentication, error handling, and base URL configuration
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 // Create axios instance with base configuration
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   timeout: 30000, // 30 seconds
 });
@@ -22,7 +27,7 @@ apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // Get NextAuth session
     const session = await getSession();
-    
+
     if (session?.user) {
       // Add JWT token to Authorization header
       // The token should be available in your NextAuth JWT callback
@@ -31,7 +36,7 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
-    
+
     return config;
   },
   (error) => {
@@ -48,26 +53,26 @@ apiClient.interceptors.response.use(
       // Server responded with error status
       const status = error.response.status;
       const data = error.response.data as any;
-      
+
       switch (status) {
         case 401:
           // Unauthorized - redirect to login
-          console.error('Unauthorized access - please login');
+          console.error("Unauthorized access - please login");
           // You might want to trigger a sign-out or redirect here
           break;
         case 403:
-          console.error('Forbidden - insufficient permissions');
+          console.error("Forbidden - insufficient permissions");
           break;
         case 404:
-          console.error('Resource not found');
+          console.error("Resource not found");
           break;
         case 500:
-          console.error('Internal server error');
+          console.error("Internal server error");
           break;
         default:
           console.error(`API Error: ${status}`, data?.message || error.message);
       }
-      
+
       // Return structured error
       return Promise.reject({
         status,
@@ -76,15 +81,15 @@ apiClient.interceptors.response.use(
       });
     } else if (error.request) {
       // Request made but no response received
-      console.error('Network error - no response from server');
+      console.error("Network error - no response from server");
       return Promise.reject({
         status: 0,
-        message: 'Network error - please check your connection',
+        message: "Network error - please check your connection",
         errors: [],
       });
     } else {
       // Error in request configuration
-      console.error('Request error:', error.message);
+      console.error("Request error:", error.message);
       return Promise.reject({
         status: 0,
         message: error.message,
@@ -98,20 +103,20 @@ apiClient.interceptors.response.use(
  * API client for authenticated requests
  */
 export const api = {
-  get: <T>(url: string, config?: any) => 
-    apiClient.get<T>(url, config).then(res => res.data),
-  
-  post: <T>(url: string, data?: any, config?: any) => 
-    apiClient.post<T>(url, data, config).then(res => res.data),
-  
-  put: <T>(url: string, data?: any, config?: any) => 
-    apiClient.put<T>(url, data, config).then(res => res.data),
-  
-  patch: <T>(url: string, data?: any, config?: any) => 
-    apiClient.patch<T>(url, data, config).then(res => res.data),
-  
-  delete: <T>(url: string, config?: any) => 
-    apiClient.delete<T>(url, config).then(res => res.data),
+  get: <T>(url: string, config?: any) =>
+    apiClient.get<T>(url, config).then((res) => res.data),
+
+  post: <T>(url: string, data?: any, config?: any) =>
+    apiClient.post<T>(url, data, config).then((res) => res.data),
+
+  put: <T>(url: string, data?: any, config?: any) =>
+    apiClient.put<T>(url, data, config).then((res) => res.data),
+
+  patch: <T>(url: string, data?: any, config?: any) =>
+    apiClient.patch<T>(url, data, config).then((res) => res.data),
+
+  delete: <T>(url: string, config?: any) =>
+    apiClient.delete<T>(url, config).then((res) => res.data),
 };
 
 /**
@@ -124,25 +129,32 @@ export const uploadFiles = async (
   additionalData?: Record<string, any>
 ): Promise<string[]> => {
   const formData = new FormData();
-  
+
   // Append files
   files.forEach((file, index) => {
     formData.append(`files`, file);
   });
-  
+
   // Append additional data if provided
   if (additionalData) {
     Object.entries(additionalData).forEach(([key, value]) => {
-      formData.append(key, typeof value === 'object' ? JSON.stringify(value) : value);
+      formData.append(
+        key,
+        typeof value === "object" ? JSON.stringify(value) : value
+      );
     });
   }
-  
-  const response = await apiClient.post<{ urls: string[] }>(endpoint, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  
+
+  const response = await apiClient.post<{ urls: string[] }>(
+    endpoint,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
   return response.data.urls;
 };
 

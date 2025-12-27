@@ -5,7 +5,8 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 export const {
   handlers: { GET, POST },
@@ -36,16 +37,16 @@ export const {
         if (!parsedCredentials.success) return null;
 
         const { email, password } = parsedCredentials.data;
-        
+
         try {
           // Call .NET backend login endpoint
           const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
             email,
-            password
+            password,
           });
 
           const user = response.data;
-          
+
           if (!user) return null;
 
           // Return user object that will be stored in JWT
@@ -56,7 +57,7 @@ export const {
             image: user.image || user.avatar,
           };
         } catch (error: any) {
-          console.error('Login error:', error.response?.data || error.message);
+          console.error("Login error:", error.response?.data || error.message);
           return null;
         }
       },

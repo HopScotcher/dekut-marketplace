@@ -3,12 +3,14 @@
 ## What You Need to Build in .NET 8
 
 ### 1. Create New .NET 8 Web API Project
+
 ```bash
 dotnet new webapi -n DekutMarketplace.Api
 cd DekutMarketplace.Api
 ```
 
 ### 2. Install Required Packages
+
 ```bash
 # Entity Framework Core for SQL Server
 dotnet add package Microsoft.EntityFrameworkCore.SqlServer
@@ -31,6 +33,7 @@ dotnet add package Azure.Storage.Blobs
 ### 3. Database Models (from DOTNET_MODELS_REFERENCE.md)
 
 Copy the entity definitions from the reference file and create:
+
 - `Models/User.cs`
 - `Models/Product.cs`
 - `Models/Account.cs`
@@ -38,6 +41,7 @@ Copy the entity definitions from the reference file and create:
 - `Models/VerificationToken.cs`
 
 ### 4. DbContext Setup
+
 ```csharp
 public class ApplicationDbContext : DbContext
 {
@@ -59,6 +63,7 @@ public class ApplicationDbContext : DbContext
 ```
 
 ### 5. Connection String (appsettings.json)
+
 ```json
 {
   "ConnectionStrings": {
@@ -76,6 +81,7 @@ public class ApplicationDbContext : DbContext
 ### 6. Critical Controllers to Create
 
 #### AuthController.cs - **HIGHEST PRIORITY**
+
 ```csharp
 [ApiController]
 [Route("api/auth")]
@@ -86,19 +92,21 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request) { }
-    
+
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request) { }
-    
+
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest request) { }
 }
 ```
 
 #### NextAuthAdapterController.cs - **REQUIRED FOR OAUTH**
+
 All endpoints listed in FRONTEND_MIGRATION_SUMMARY.md under "NextAuth Custom Adapter"
 
 #### ProductsController.cs
+
 ```csharp
 [ApiController]
 [Route("api/products")]
@@ -128,6 +136,7 @@ public class ProductsController : ControllerBase
 ```
 
 #### UploadController.cs - **REQUIRED FOR IMAGE UPLOAD**
+
 ```csharp
 [ApiController]
 [Route("api/upload")]
@@ -145,6 +154,7 @@ public class UploadController : ControllerBase
 ```
 
 ### 7. JWT Authentication Setup (Program.cs)
+
 ```csharp
 // Add services
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -184,6 +194,7 @@ app.UseAuthorization();
 ```
 
 ### 8. Database Migration
+
 ```bash
 # Create initial migration
 dotnet ef migrations add InitialCreate
@@ -193,9 +204,11 @@ dotnet ef database update
 ```
 
 ### 9. Run the API
+
 ```bash
 dotnet run
 ```
+
 Should start on `https://localhost:5001` and `http://localhost:5000`
 
 ---
@@ -203,16 +216,19 @@ Should start on `https://localhost:5001` and `http://localhost:5000`
 ## Testing with Next.js Frontend
 
 ### 1. Update Next.js .env.local
+
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
 ```
 
 ### 2. Start Next.js
+
 ```bash
 npm run dev
 ```
 
 ### 3. Test Registration Flow
+
 1. Go to http://localhost:3000/auth/register
 2. Fill form and submit
 3. Should call `POST http://localhost:5000/api/auth/register`
@@ -220,12 +236,14 @@ npm run dev
 5. Verify user created in SQL Server
 
 ### 4. Test Login Flow
+
 1. Go to http://localhost:3000/auth/signin
 2. Enter credentials
 3. Should call `POST http://localhost:5000/api/auth/login`
 4. JWT should be returned and stored in NextAuth session
 
 ### 5. Test Product Creation
+
 1. Sign in first
 2. Go to http://localhost:3000/sell
 3. Upload images and fill form
@@ -237,22 +255,29 @@ npm run dev
 ## Common Issues & Solutions
 
 ### Issue: CORS Errors
+
 **Solution:** Ensure CORS policy allows `http://localhost:3000` and includes credentials
 
 ### Issue: 401 Unauthorized on Protected Endpoints
-**Solution:** 
+
+**Solution:**
+
 - Check JWT is being sent in Authorization header
 - Verify JWT secret matches between .NET and NextAuth
 - Check token expiration
 
 ### Issue: Image Upload Fails
+
 **Solution:**
+
 - Ensure `[FromForm]` attribute on upload controller
 - Check Content-Type is `multipart/form-data`
 - Verify file size limits in .NET configuration
 
 ### Issue: NextAuth Adapter Errors
+
 **Solution:**
+
 - All adapter endpoints must return correct DTO shapes
 - Check date/time format (ISO 8601 strings)
 - Ensure 404 returns for not found resources (don't throw exceptions)
@@ -274,23 +299,26 @@ npm run dev
 ## Useful SQL Server Queries
 
 ### Check Users Table
+
 ```sql
 SELECT * FROM Users ORDER BY CreatedAt DESC
 ```
 
 ### Check Products with Users
+
 ```sql
-SELECT p.*, u.Name as OwnerName 
-FROM Products p 
-JOIN Users u ON p.UserId = u.Id 
+SELECT p.*, u.Name as OwnerName
+FROM Products p
+JOIN Users u ON p.UserId = u.Id
 WHERE p.Status = 'published'
 ORDER BY p.CreatedAt DESC
 ```
 
 ### Check OAuth Accounts
+
 ```sql
-SELECT u.Email, a.Provider, a.ProviderAccountId 
-FROM Accounts a 
+SELECT u.Email, a.Provider, a.ProviderAccountId
+FROM Accounts a
 JOIN Users u ON a.UserId = u.Id
 ```
 

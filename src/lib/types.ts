@@ -38,13 +38,13 @@ export interface Product {
   brand?: string;
   rating?: number; // Computed from reviews
   reviewCount?: number; // Count of reviews
-  condition: 'new' | 'used' | 'refurbished';
+  condition: "new" | "used" | "refurbished";
   tags?: string[];
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   location?: string;
   user: UserSummary; // Nested user object
-  status: 'draft' | 'published';
+  status: "draft" | "published";
   userId: string;
 }
 
@@ -57,10 +57,10 @@ export interface ProductCreateRequest {
   images: string[]; // URLs returned from image upload endpoint
   category: string;
   brand?: string;
-  condition: 'new' | 'used' | 'refurbished';
+  condition: "new" | "used" | "refurbished";
   tags?: string[];
   location?: string;
-  status: 'draft' | 'published';
+  status: "draft" | "published";
 }
 
 export interface ProductUpdateRequest extends Partial<ProductCreateRequest> {
@@ -96,11 +96,11 @@ export interface Order {
   userId: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   shippingAddress: string; // JSON or separate Address object
   billingAddress: string;
   paymentMethod: string;
-  paymentStatus: 'pending' | 'paid' | 'refunded';
+  paymentStatus: "pending" | "paid" | "refunded";
   trackingNumber?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -138,8 +138,8 @@ export interface SearchFilters {
   condition?: string;
   location?: string;
   rating?: number;
-  sortBy?: 'price' | 'date' | 'relevance';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "price" | "date" | "relevance";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface SearchResult {

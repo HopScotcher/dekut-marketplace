@@ -5,6 +5,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 ## Changes Made
 
 ### 1. **Removed Backend Logic**
+
 - ✅ Deleted Prisma schema and ORM files (`prisma/` folder, `lib/prisma.ts`)
 - ✅ Deleted Next.js API routes:
   - `/api/products/*` - Product CRUD operations
@@ -18,7 +19,9 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 - ✅ Removed dependencies: `@prisma/client`, `prisma`, `@auth/prisma-adapter`, `bcrypt`, `nodemailer`, `fuse.js`, `pg`, `@supabase/supabase-js`
 
 ### 2. **Created .NET API Integration**
+
 - ✅ **API Client** (`src/lib/apiClient.ts`):
+
   - Axios instance with auth interceptors
   - Automatic JWT token attachment from NextAuth session
   - Global error handling
@@ -26,6 +29,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
   - Base URL: `process.env.NEXT_PUBLIC_API_BASE_URL` (default: `http://localhost:5000`)
 
 - ✅ **Custom NextAuth Adapter** (`src/lib/dotnet-adapter.ts`):
+
   - Implements NextAuth Adapter interface
   - Calls .NET endpoints for user, account, session, and verification token operations
   - Required for OAuth (Google) authentication
@@ -36,6 +40,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
   - `src/services/authService.ts` - Registration, forgot password, reset password
 
 ### 3. **Updated Authentication**
+
 - ✅ **auth.ts**: Uses custom .NET adapter instead of PrismaAdapter
 - ✅ **Credentials Provider**: Calls `.NET /api/auth/login` endpoint
 - ✅ **JWT Callback**: Stores access token from .NET for authenticated requests
@@ -43,12 +48,14 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 - ✅ **ForgotPasswordDialog**: Updated to call .NET forgot password API
 
 ### 4. **Search Implementation**
+
 - ✅ Removed Fuse.js client-side fuzzy search
 - ✅ **useSearch Hook**: Now calls .NET `/api/products/search` endpoint
 - ✅ Supports server-side SQL full-text search with filters, sorting, pagination
 - ✅ **searchUtils.ts**: Kept minimal client-side filtering/sorting for cached results
 
 ### 5. **Product Creation**
+
 - ✅ **ProductCreateForm**: Updated for multipart image upload
   - Step 1: Upload images to .NET `/api/upload/images` endpoint
   - Step 2: Create product with image URLs returned from upload
@@ -56,6 +63,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
   - Uses NextAuth session for user authentication
 
 ### 6. **TypeScript Types**
+
 - ✅ Updated `src/lib/types.ts` to match .NET DTOs:
   - `User` - Matches .NET User entity
   - `Product` - Matches .NET Product entity with image URLs
@@ -64,6 +72,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
   - `ApiResponse`, `PaginatedResponse`, `ApiError` - API wrapper types
 
 ### 7. **Environment Variables**
+
 - ✅ Added to `.env`:
   ```env
   NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
@@ -71,6 +80,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 - ✅ Removed database connection strings (DATABASE_URL, DIRECT_URL)
 
 ### 8. **Package.json**
+
 - ✅ Removed Prisma scripts (`db:generate`, `db:push`, `db:seed`)
 - ✅ Removed backend dependencies (see above)
 - ✅ Kept: `next-auth`, `axios`, `react-query`, `zod`, `zustand`
@@ -82,12 +92,14 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 ### Required API Endpoints
 
 #### **Authentication**
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - Credentials login (return JWT)
 - `POST /api/auth/forgot-password` - Send reset email
 - `POST /api/auth/reset-password` - Reset with token
 
 #### **NextAuth Custom Adapter**
+
 - `POST /api/auth/users` - Create user
 - `GET /api/auth/users/{id}` - Get user by ID
 - `GET /api/auth/users/by-email/{email}` - Get user by email
@@ -104,6 +116,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 - `DELETE /api/auth/verification-tokens?identifier={}&token={}` - Use verification token
 
 #### **Products**
+
 - `GET /api/products` - List published products (paginated)
 - `GET /api/products/search?q={}&category={}&...` - Search with filters (SQL full-text)
 - `GET /api/products/featured?limit={}` - Featured products
@@ -116,9 +129,11 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 - `DELETE /api/products/bulk` - Bulk delete products
 
 #### **Users**
+
 - `GET /api/users/{userId}/products?status={}` - Get user's products
 
 #### **File Upload**
+
 - `POST /api/upload/images` - Upload product images (multipart/form-data)
   - Accept multiple files
   - Store in Azure Blob Storage or local storage
@@ -127,6 +142,7 @@ This branch (`feature/dotnet-backend-integration`) contains the Next.js frontend
 ### Database Models
 
 See `DOTNET_MODELS_REFERENCE.md` for complete entity definitions including:
+
 - User (with password hashing, OAuth support)
 - Product (with image URLs, full-text index)
 - Account (NextAuth OAuth)
@@ -137,6 +153,7 @@ See `DOTNET_MODELS_REFERENCE.md` for complete entity definitions including:
 ### Configuration
 
 #### CORS
+
 ```csharp
 builder.Services.AddCors(options => {
     options.AddPolicy("NextJsClient", policy => {
@@ -149,12 +166,14 @@ builder.Services.AddCors(options => {
 ```
 
 #### JWT Authentication
+
 - Share JWT secret with Next.js NextAuth configuration
 - Or use asymmetric keys (recommended for production)
 - Validate Bearer tokens in `Authorization` header
 - Extract user ID from JWT claims
 
 #### SQL Server Full-Text Search
+
 - Create full-text catalog on `Product` table
 - Index `Name` and `Description` columns
 - Use `CONTAINS` or `FREETEXT` in search queries
@@ -164,12 +183,15 @@ builder.Services.AddCors(options => {
 ## Setup Instructions
 
 ### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 2. Update Environment Variables
+
 Create `.env.local` with:
+
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
 
@@ -181,14 +203,17 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
 ### 3. Start .NET Backend
+
 Ensure your .NET 8 API is running on port 5000 (or update `NEXT_PUBLIC_API_BASE_URL`)
 
 ### 4. Run Next.js Frontend
+
 ```bash
 npm run dev
 ```
 
 ### 5. Test Integration
+
 - Register new user → Should call .NET registration endpoint
 - Sign in with Google → Should use NextAuth adapter to store in .NET DB
 - Sign in with credentials → Should call .NET login endpoint
@@ -200,19 +225,23 @@ npm run dev
 ## Important Notes
 
 ### Authentication Flow
+
 1. **OAuth (Google)**: NextAuth handles OAuth flow → Custom adapter stores data in .NET DB
 2. **Credentials**: NextAuth sends credentials to .NET `/api/auth/login` → Returns JWT
 3. **Protected Routes**: Middleware checks NextAuth session → API requests include JWT in header
 
 ### Image Storage
+
 - **Old**: Base64 encoded in database (inefficient)
 - **New**: Images uploaded to .NET → Stored in blob storage → URLs returned and saved in Product entity
 
 ### Search
+
 - **Old**: Client-side Fuse.js fuzzy search (loads all products)
 - **New**: Server-side SQL full-text search with pagination (scalable)
 
 ### Session Strategy
+
 - **Current**: JWT-only (stateless)
 - **With Adapter**: Database sessions stored in .NET DB (more secure, supports revocation)
 
@@ -221,6 +250,7 @@ npm run dev
 ## Migration Status
 
 ✅ **Completed:**
+
 - Prisma removal
 - API route deletion
 - .NET API client creation
@@ -232,6 +262,7 @@ npm run dev
 - Dependency cleanup
 
 ⏳ **Pending .NET Implementation:**
+
 - All API endpoints listed above
 - Database models with EF Core
 - JWT authentication middleware
@@ -240,6 +271,7 @@ npm run dev
 - SQL full-text search
 
 📝 **Future Enhancements:**
+
 - Category management (currently mock data)
 - Order/checkout flow
 - Review and rating system
@@ -252,6 +284,7 @@ npm run dev
 ## Rollback
 
 To revert to the original full-stack Next.js implementation:
+
 ```bash
 git checkout main
 ```
