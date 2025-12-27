@@ -11,26 +11,20 @@ export default function ForgotPasswordDialog({ open, onOpenChange }: { open: boo
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      const { forgotPassword } = await import('@/services/authService');
+      
+      const result = await forgotPassword({ email });
+      
+      toast.success('Password reset email sent!', {
+        description: result.message || 'Check your inbox for further instructions.',
       });
-
-      if (response.ok) {
-        toast.success('Password reset email sent!', {
-          description: 'Check your inbox for further instructions.',
-        });
-        onOpenChange(false);
-      } else {
-        const errorData = await response.json();
-        toast.error('Failed to send email', {
-          description: errorData.error || 'An error occurred. Please try again.',
-        });
-      }
-    } catch (error) {
+      onOpenChange(false);
+    } catch (error: any) {
       console.error('Forgot password error:', error);
-      toast.error('An unexpected error occurred. Please try again.');
+      const errorMessage = error.response?.data?.message || error.message;
+      toast.error('Failed to send email', {
+        description: errorMessage || 'An error occurred. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }

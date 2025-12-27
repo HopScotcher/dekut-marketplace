@@ -1,19 +1,16 @@
-// lib/services/productService.ts
+/**
+ * Product Service - Calls .NET Backend API
+ * All product-related operations now go through the .NET API
+ */
+import { api } from '@/lib/apiClient';
 import { Product } from '@/lib/types';
-import { mockProducts } from '@/data/mock-data';
-
-// Simulate API delay for realistic behavior
-const simulateDelay = (ms: number = 500): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
 
 /**
- * Get all products
+ * Get all published products
  * @returns Promise<Product[]>
  */
 export async function getAllProducts(): Promise<Product[]> {
-  await simulateDelay();
-  return mockProducts;
+  return api.get<Product[]>('/api/products');
 }
 
 /**
@@ -22,10 +19,12 @@ export async function getAllProducts(): Promise<Product[]> {
  * @returns Promise<Product | null>
  */
 export async function getProductById(productId: string): Promise<Product | null> {
-  await simulateDelay();
-  
-  const product = mockProducts.find(p => p.id === productId);
-  return product || null;
+  try {
+    return await api.get<Product>(`/api/products/${productId}`);
+  } catch (error: any) {
+    if (error.status === 404) return null;
+    throw error;
+  }
 }
 
 /**
@@ -34,38 +33,73 @@ export async function getProductById(productId: string): Promise<Product | null>
  * @returns Promise<Product[]>
  */
 export async function getProductsByCategory(categoryId: string): Promise<Product[]> {
-  await simulateDelay();
-  
-  return mockProducts.filter(product => product.categoryId === categoryId);
-
+  return api.get<Product[]>(`/api/products`, {
+    params: { category: categoryId }
+  });
 }
 
 /**
- * Get products by seller
- * @param sellerId - The seller ID to filter by
+ * Get products by seller/user
+ * @param userId - The user ID to filter by
+ * @param status - Optional status filter ('draft' | 'published')
  * @returns Promise<Product[]>
  */
-export async function getProductsBySeller(sellerId: string): Promise<Product[]> {
-  await simulateDelay();
-  
-  return mockProducts.filter(product => product.seller.id === sellerId);
+export async function getProductsByUser(
+  userId: string, 
+  status?: 'draft' | 'published'
+): Promise<Product[]> {
+  return api.get<Product[]>(`/api/users/${userId}/products`, {
+    params: status ? { status } : undefined
+  });
 }
 
 /**
- * Search products by name or description
+ * Search products with filters and sorting
+ * Uses .NET backend with SQL full-text search
  * @param query - Search query string
- * @returns Promise<Product[]>
+ * @param options - Filter and sort options
+ * @returns Promise with products and pagination info
  */
-export async function searchProducts(query: string): Promise<Product[]> {
-  await simulateDelay();
+export interface ProductSearchOptions {
+  query?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  condition?: string[];
+  location?: string;
+  sortBy?: 'price' | 'date' | 'relevance';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProductSearchResult {
+  products: Product[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function searchProducts(
+  options: ProductSearchOptions = {}
+): Promise<ProductSearchResult> {
+  const params = new URLSearchParams();
   
-  const lowercaseQuery = query.toLowerCase();
+  if (options.query) params.append('q', options.query);
+  if (options.category) params.append('category', options.category);
+  if (options.minPrice !== undefined) params.append('minPrice', options.minPrice.toString());
+  if (options.maxPrice !== undefined) params.append('maxPrice', options.maxPrice.toString());
+  if (options.condition && options.condition.length > 0) {
+    options.condition.forEach(c => params.append('condition', c));
+  }
+  if (options.location) params.append('location', options.location);
+  if (options.sortBy) params.append('sortBy', options.sortBy);
+  if (options.sortOrder) params.append('sortOrder', options.sortOrder);
+  if (options.page) params.append('page', options.page.toString());
+  if (options.pageSize) params.append('pageSize', options.pageSize.toString());
   
-  return mockProducts.filter(product => 
-    product.name.toLowerCase().includes(lowercaseQuery) ||
-    product.description.toLowerCase().includes(lowercaseQuery) ||
-    product.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))
-  );
+  return api.get<ProductSearchResult>(`/api/products/search?${params.toString()}`);
 }
 
 /**
@@ -74,108 +108,9 @@ export async function searchProducts(query: string): Promise<Product[]> {
  * @returns Promise<Product[]>
  */
 export async function getFeaturedProducts(limit: number = 8): Promise<Product[]> {
-  await simulateDelay();
-  
-  // Sort by rating and recency, then limit
-  const featured = mockProducts
-    .filter(product => product.rating >= 4.0)
-    .sort((a, b) => {
-      // Sort by rating first, then by creation date
-      if (b.rating !== a.rating) {
-        return b.rating - a.rating;
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    })
-    .slice(0, limit);
-    
-  return featured;
-}
-
-/**
- * Get products with filters and sorting
- * @param options - Filter and sort options
- * @returns Promise<Product[]>
- */
-export interface ProductFilterOptions {
-  categoryId?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  condition?: Product['condition'][];
-  minRating?: number;
-  sortBy?: 'price' | 'rating' | 'newest' | 'oldest';
-  sortOrder?: 'asc' | 'desc';
-  limit?: number;
-  offset?: number;
-}
-
-export async function getFilteredProducts(options: ProductFilterOptions = {}): Promise<{
-  products: Product[];
-  totalCount: number;
-}> {
-  await simulateDelay();
-  
-  let filteredProducts = [...mockProducts];
-  
-  // Apply filters
-  if (options.categoryId) {
-    filteredProducts = filteredProducts.filter(p => p.categoryId === options.categoryId);
-  }
-  
-  if (options.minPrice !== undefined) {
-    filteredProducts = filteredProducts.filter(p => p.price >= options.minPrice!);
-  }
-  
-  if (options.maxPrice !== undefined) {
-    filteredProducts = filteredProducts.filter(p => p.price <= options.maxPrice!);
-  }
-  
-  if (options.condition && options.condition.length > 0) {
-    filteredProducts = filteredProducts.filter(p => options.condition!.includes(p.condition));
-  }
-  
-  if (options.minRating !== undefined) {
-    filteredProducts = filteredProducts.filter(p => p.rating >= options.minRating!);
-  }
-  
-  // Apply sorting
-  if (options.sortBy) {
-    filteredProducts.sort((a, b) => {
-      let comparison = 0;
-      
-      switch (options.sortBy) {
-        case 'price':
-          comparison = a.price - b.price;
-          break;
-        case 'rating':
-          comparison = a.rating - b.rating;
-          break;
-        case 'newest':
-          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          break;
-        case 'oldest':
-          comparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          break;
-        default:
-          return 0;
-      }
-      
-      return options.sortOrder === 'desc' ? -comparison : comparison;
-    });
-  }
-  
-  const totalCount = filteredProducts.length;
-  
-  // Apply pagination
-  if (options.offset !== undefined || options.limit !== undefined) {
-    const offset = options.offset || 0;
-    const limit = options.limit || filteredProducts.length;
-    filteredProducts = filteredProducts.slice(offset, offset + limit);
-  }
-  
-  return {
-    products: filteredProducts,
-    totalCount
-  };
+  return api.get<Product[]>('/api/products/featured', {
+    params: { limit }
+  });
 }
 
 /**
@@ -185,17 +120,23 @@ export async function getFilteredProducts(options: ProductFilterOptions = {}): P
  * @returns Promise<Product[]>
  */
 export async function getRelatedProducts(productId: string, limit: number = 4): Promise<Product[]> {
-  await simulateDelay();
-  
-  const currentProduct = mockProducts.find(p => p.id === productId);
-  if (!currentProduct) return [];
-  
-  const related = mockProducts
-    .filter(p => p.id !== productId && p.categoryId === currentProduct.categoryId)
-    .sort(() => Math.random() - 0.5) // Shuffle for variety
-    .slice(0, limit);
-    
-  return related;
+  return api.get<Product[]>(`/api/products/${productId}/related`, {
+    params: { limit }
+  });
+}
+
+// Legacy export for backward compatibility
+export interface ProductFilterOptions extends ProductSearchOptions {}
+
+export async function getFilteredProducts(options: ProductFilterOptions = {}): Promise<{
+  products: Product[];
+  totalCount: number;
+}> {
+  const result = await searchProducts(options);
+  return {
+    products: result.products,
+    totalCount: result.totalCount
+  };
 }
 
 /**

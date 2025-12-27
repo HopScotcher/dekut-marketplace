@@ -40,49 +40,33 @@ export default function RegisterForm() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          phone: data.phone,
-          location: data.location,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.log(errorData.message)
-        throw new Error(errorData.message || 'Registration failed')
-      }
-
-      const result = await response.json()
+      const { registerUser } = await import('@/services/authService');
+      
+      await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+        location: data.location,
+      });
 
       toast.success('Account created successfully!', {
         description: 'Please sign in with your new account.',
       })
 
       router.push('/auth/signin')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error)
       
-      if (error instanceof Error) {
-        if (error.message.includes('already exists')) {
-          toast.error('Account already exists', {
-            description: 'An account with this email already exists. Please sign in instead.',
-          })
-        } else {
-          toast.error('Registration failed', {
-            description: error.message || 'An unexpected error occurred. Please try again.',
-          })
-        }
+      const errorMessage = error.response?.data?.message || error.message;
+      
+      if (errorMessage?.includes('already exists')) {
+        toast.error('Account already exists', {
+          description: 'An account with this email already exists. Please sign in instead.',
+        })
       } else {
         toast.error('Registration failed', {
-          description: 'An unexpected error occurred. Please try again.',
+          description: errorMessage || 'An unexpected error occurred. Please try again.',
         })
       }
     } finally {

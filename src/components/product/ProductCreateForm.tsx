@@ -212,54 +212,65 @@ export default function ProductCreateForm() {
     setCurrentStatus(status)
 
     try {
-      // Generate product ID
-      const productId = generateId()
+      // Step 1: Upload images to .NET backend
+      const { uploadFiles } = await import('@/lib/apiClient');
+      const imageFiles = images.map(img => img.file);
+      
+      toast.info('Uploading images...', {
+        description: 'Please wait while we upload your images.',
+      });
+      
+      const imageUrls = await uploadFiles('/api/upload/images', imageFiles);
 
-      // Create product object
-      const product = {
-        id: productId,
+      // Step 2: Get current user from session
+      const { useSession } = await import('next-auth/react');
+      const session = await import('next-auth/react').then(m => m.getSession());
+      
+      if (!session?.user?.id) {
+        toast.error('Authentication required', {
+          description: 'Please sign in to create a product.',
+        });
+        router.push('/auth/signin');
+        return;
+      }
+
+      // Step 3: Create product via .NET API
+      const { api } = await import('@/lib/apiClient');
+      const productData = {
         name: data.name,
         description: data.description,
         price: parseFloat(data.price),
         originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : undefined,
-        images: images.map(img => img.base64),
+        images: imageUrls,
         category: mockCategories.find(cat => cat.id === data.category)?.name || '',
-        categoryId: data.category,
         brand: data.brand || undefined,
-        rating: 0,
-        reviewCount: 0,
         condition: data.condition,
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        seller: MOCK_USER,
         status: status,
-        userId: MOCK_USER.id,
-      }
+      };
 
-      // Store in localStorage for now (MVP)
-      const existingProducts = JSON.parse(localStorage.getItem('products') || '[]')
-      existingProducts.push(product)
-      localStorage.setItem('products', JSON.stringify(existingProducts))
+      const createdProduct = await api.post<Product>('/api/products', productData);
 
       if (status === 'published') {
         toast.success('Product listed successfully!', {
           description: 'Your item has been added to the marketplace.',
         })
-        router.push(`/products/${productId}`)
+        router.push(`/products/${createdProduct.id}`)
       } else {
         toast.success('Draft saved!', {
           description: 'Your product draft has been saved.',
         })
-        router.push('/dashboard')
+        router.push('/user/dashboard')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating product:', error)
+      const errorMessage = error.message || 'Something went wrong. Please try again.';
       toast.error('Product was not listed!', {
-        description: 'Something went wrong. Please try again.',
+        description: errorMessage,
       })
     } finally {
       setIsSubmitting(false)
+      setCurrentStatus(null)
     }
   }
 
