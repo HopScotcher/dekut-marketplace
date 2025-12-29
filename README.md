@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DeKUT Marketplace
+
+A full-stack marketplace application for DeKUT students to buy and sell items.
+
+## Project Structure (Monorepo)
+
+```
+dekut-marketplace/
+├── frontend/          # Next.js 15 + TypeScript + Tailwind CSS
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── next.config.ts
+├── backend/           # ASP.NET Core Web API (.NET 8)
+│   ├── DeKutMarketplace.Api/
+│   └── DeKutMarketplace.sln
+└── README.md
+```
+
+## Tech Stack
+
+### Frontend
+
+- **Framework:** Next.js 15 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui
+- **Auth:** NextAuth.js
+- **State:** Zustand + React Query
+
+### Backend
+
+- **Framework:** ASP.NET Core Web API
+- **Runtime:** .NET 8
+- **Database:** SQL Server (planned)
+- **ORM:** Entity Framework Core (planned)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ and npm/yarn
+- .NET 8 SDK
+- SQL Server (for production)
+
+### Frontend Setup
 
 ```bash
+cd frontend
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The frontend will run on [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Backend Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd backend
+dotnet restore
+dotnet run --project DeKutMarketplace.Api
+```
 
-## Learn More
+The API will run on [http://localhost:5000](http://localhost:5000)
 
-To learn more about Next.js, take a look at the following resources:
+## Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Frontend calls backend API at `/api/*` endpoints
+- CORS is configured for local development
+- API client located in `frontend/src/lib/apiClient.ts`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentation
 
-## Deploy on Vercel
+- [`DOTNET_MODELS_REFERENCE.md`](frontend/DOTNET_MODELS_REFERENCE.md) - Backend model reference
+- [`DOTNET_QUICK_START.md`](frontend/DOTNET_QUICK_START.md) - .NET quick start guide
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT

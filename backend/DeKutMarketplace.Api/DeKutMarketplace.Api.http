@@ -1,0 +1,6 @@
+@DeKutMarketplace.Api_HostAddress = http://localhost:5077
+
+GET {{DeKutMarketplace.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
