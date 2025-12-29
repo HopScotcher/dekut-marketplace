@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using DeKutMarketplace.Api.Data;
@@ -65,14 +66,14 @@ namespace DeKutMarketplace.Api.Controllers
 
             await _userManager.AddToRoleAsync(newUser, "User");
 
-            var token = GenerateJwtToken(newUser);
+            // var token = GenerateJwtToken(newUser);
 
             _logger.LogInformation("User {email} registered and signed in successfully", newUser.Email);
 
             return Ok(new
             {
                 message ="Registration successful",
-                token = token,
+                // token = token,
                 user = new
                 {
                     id = newUser.Id,
@@ -86,7 +87,40 @@ namespace DeKutMarketplace.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            throw new ArgumentNullException("error occured");
+             var user = await _userManager.FindByEmailAsync(loginDto.Email);
+
+             if(user == null)
+            {
+                BadRequest("Email or password is incorrect");
+            }
+
+            var passwordCheck = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
+
+            if (passwordCheck.Succeeded)
+            {
+                var jwtId = Guid.NewGuid().ToString();
+                var accessToken = GenerateJwtToken(user, jwtId);
+                var refreshToken = await GenerateRefreshToken(user, jwtId);
+
+
+                _logger.LogInformation("user {Email} logged in successfully", loginDto.Email);
+
+                return Ok(new TokenResponseDto
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken.Token,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config ["JwtSettings:ExpiryMinutes"]))
+                });
+            }
+
+            if (passwordCheck.IsLockedOut)
+            {
+                _logger.LogWarning("User account {Email} locked out", user.Email);
+                return StatusCode(StatusCodes.Status403Forbidden, "Tjis account has been locked, try again later");
+            }
+
+            return Unauthorized("Incorrect email or password");
+
         }
 
 
@@ -104,7 +138,7 @@ namespace DeKutMarketplace.Api.Controllers
         }
 
 
-        private string GenerateJwtToken(AppUser user)
+        private string GenerateJwtToken(AppUser user, string jwtId)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Key"]!));
 
@@ -114,7 +148,7 @@ namespace DeKutMarketplace.Api.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, jwtId)
             };
 
             var token = new JwtSecurityToken(
@@ -127,6 +161,38 @@ namespace DeKutMarketplace.Api.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+
+        private async Task<RefreshToken> GenerateRefreshToken(AppUser user, string jwtId)
+        {
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                JwtId = jwtId,
+                UserId = user.Id,
+                AddedDate = DateTime.UtcNow,
+                ExpiryDate = DateTime.UtcNow.AddDays(30),
+                IsUsed = false,
+                IsRevoked = false
+            };
+        _dbContext.RefreshTokens.Add(refreshToken);
+        await _dbContext.SaveChangesAsync();
+
+        return refreshToken;
+        }
+
+        // private async Task RevokeAllUserTokens(string userId)
+        // {
+        //     var userTokens = await _dbContext.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked).ToListAsync();
+
+        //     foreach(var token in userTokens)
+        //     {
+        //         token.IsRevoked = true;
+        //     }
+
+        //     await _dbContext.SaveChangesAsync();
+        //     _logger.LogWarning("All tokens revoked for user {UserId} due to security measures", userId);
+        // }
 
 
         
