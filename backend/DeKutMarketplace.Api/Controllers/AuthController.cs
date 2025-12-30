@@ -3,16 +3,22 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using DeKutMarketplace.Api.Data;
 using DeKutMarketplace.Api.Dtos;
+using DeKutMarketplace.Api.Interfaces;
 using DeKutMarketplace.Api.Models;
+using DeKutMarketplace.Api.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using Microsoft.AspNetCore.Server.HttpSys;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DeKutMarketplace.Api.Controllers
@@ -23,16 +29,17 @@ namespace DeKutMarketplace.Api.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly IConfiguration _config;
         private readonly SignInManager<AppUser> _signInManager;
+        private readonly IEmailService _emailService;
 
         private readonly ILogger<AuthController> _logger;
-        public AuthController(AppDbContext dbcontext, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, IConfiguration config, ILogger<AuthController> logger )
+        public AuthController(AppDbContext dbcontext, UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, IConfiguration config, ILogger<AuthController> logger, IEmailService emailService )
         {
             _dbContext = dbcontext;
             _signInManager = signInManager;
             _userManager = userManager;
             _config = config;
             _logger = logger;
-            
+            _emailService = emailService;
         }
 
         [HttpPost("register")]
@@ -64,24 +71,15 @@ namespace DeKutMarketplace.Api.Controllers
                 BadRequest(registerResult.Errors);
             }
 
+
             await _userManager.AddToRoleAsync(newUser, "User");
-
-            // var token = GenerateJwtToken(newUser);
-
+            
             _logger.LogInformation("User {email} registered and signed in successfully", newUser.Email);
 
-            return Ok(new
-            {
-                message ="Registration successful",
-                // token = token,
-                user = new
-                {
-                    id = newUser.Id,
-                    email = newUser.Email,
-                    name = newUser.Name,
-                    location = newUser.Location
-                }
-            });
+
+            var authResponse = await GenerateAuthResponse(newUser, "Registration successful");
+
+            return Ok(authResponse);
         }
 
         [HttpPost("login")]
@@ -98,19 +96,11 @@ namespace DeKutMarketplace.Api.Controllers
 
             if (passwordCheck.Succeeded)
             {
-                var jwtId = Guid.NewGuid().ToString();
-                var accessToken = GenerateJwtToken(user, jwtId);
-                var refreshToken = await GenerateRefreshToken(user, jwtId);
 
 
-                _logger.LogInformation("user {Email} logged in successfully", loginDto.Email);
+            var authResponse = await GenerateAuthResponse(user, "Login successful");
 
-                return Ok(new TokenResponseDto
-                {
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken.Token,
-                    ExpiresAt = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config ["JwtSettings:ExpiryMinutes"]))
-                });
+            return Ok(authResponse);
             }
 
             if (passwordCheck.IsLockedOut)
@@ -127,14 +117,54 @@ namespace DeKutMarketplace.Api.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
         {
-            throw new ArgumentNullException("error occured");
+            var user = await _userManager.FindByEmailAsync(forgotPasswordDto.Email);
+
+            if(user == null)
+            {
+                _logger.LogInformation("password reset request for non-existent user {Email}", forgotPasswordDto.Email);
+                return Ok(new {message ="If an account with this email exists, we have sent a password reset link to your email"});
+            }
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = System.Net.WebUtility.UrlEncode(token);
+            var frontendUrl = _config["FrontEndUrl"];
+
+            var resetLink = $"{frontendUrl}/reset-password?email={user.Email}&code={encodedToken}";
+            var emailBody = $"Reset your password by <a href='{resetLink}'>clicking here</a>";
+
+            await  _emailService.SendByEmailAsync(user.Email, "Reset your password", emailBody);
+
+            _logger.LogInformation("password reset link sent to {Email}", user.Email);
+            return Ok(new {message = "if this account exists, you'll receive a link to reset your password"});
         }
 
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
         {
-            throw new ArgumentNullException("error occured");
+            var user = await _userManager.FindByEmailAsync(resetPasswordDto.Email);
+
+            if(user == null)
+            {
+                BadRequest("password request failed");
+            }
+
+            var decodedToken = System.Net.WebUtility.UrlDecode(resetPasswordDto.Token);
+            var result = await _userManager.ResetPasswordAsync(user, decodedToken, resetPasswordDto.NewPassword);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("password reset successfully for user {Email}", resetPasswordDto.Email);
+                return Ok(new {message = "password reset was successful. You can now login with into your account"});
+
+            }
+
+            foreach(var error in result.Errors)
+            {
+                _logger.LogWarning("password reset failed for {Email}: {Error}", resetPasswordDto.Email, error);
+            }
+
+            return BadRequest("password reset failed");
         }
 
 
@@ -181,20 +211,120 @@ namespace DeKutMarketplace.Api.Controllers
         return refreshToken;
         }
 
-        // private async Task RevokeAllUserTokens(string userId)
-        // {
-        //     var userTokens = await _dbContext.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked).ToListAsync();
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["JwtSettings:Key"]!);
+            // JwtSecurityToken? jwtToken;
+            ClaimsPrincipal? principal;
 
-        //     foreach(var token in userTokens)
-        //     {
-        //         token.IsRevoked = true;
-        //     }
+            try
+            {
+                principal = tokenHandler.ValidateToken(request.AccessToken, new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = false,
+                    ValidIssuer = _config["JwtSettings:Issuer"],
+                    ValidAudience = _config["JwtSettings:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(key)
+                }, out SecurityToken validatedToken);
+                // jwtToken = tokenHandler.ReadJwtToken(request.AccessToken);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogWarning("Invalid access token provided: {Error}", ex.Message);
+                return BadRequest(new {message = "invalid access token format"});
+            }
 
-        //     await _dbContext.SaveChangesAsync();
-        //     _logger.LogWarning("All tokens revoked for user {UserId} due to security measures", userId);
-        // }
+            var jti = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+
+            if (string.IsNullOrEmpty(jti))
+            {
+                return BadRequest(new {message = "Invalid token: missing JTI claim"});
+            }
 
 
+            var storedRefreshToken = await _dbContext.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken && rt.JwtId == jti);
+
+            if(storedRefreshToken == null)
+            {
+                return BadRequest(new {message = "refresh token not found"});
+            }
+
+            if (storedRefreshToken.IsUsed)
+            {
+                var usedUser = await _userManager.FindByIdAsync(storedRefreshToken.UserId);
+
+                _logger.LogWarning("Attempted use of used token for user {Email}", storedRefreshToken.UserId);  
+                await RevokeAllUserTokens(storedRefreshToken.UserId);
+                return BadRequest( new {message = "Refresh token already use. All sessions revoked"});
+            }
+
+            if (storedRefreshToken.IsRevoked)
+            {
+                return BadRequest( new {message = "refresh token has been revoked"});
+            }
+
+            if(storedRefreshToken.ExpiryDate < DateTime.UtcNow)
+            {
+                return BadRequest(new {message = "refresh token has expired.Please login again"});
+            }
+
+            storedRefreshToken.IsUsed = true;
+            await _dbContext.SaveChangesAsync();
+
+            var user = await _userManager.FindByIdAsync(storedRefreshToken.UserId);
+            if(user == null)
+            {
+                return BadRequest("User not found");
+            }
+
+            var authResponse = await GenerateAuthResponse(user, "Tokens refreshed successfully");
+
+            return Ok(authResponse);
+        }
+        
+        private async Task RevokeAllUserTokens(string userId)
+        {
+            var userTokens = await _dbContext.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked).ToListAsync();
+
+            foreach(var token in userTokens)
+            {
+                token.IsRevoked = true;
+            }
+
+            await _dbContext.SaveChangesAsync();
+            _logger.LogWarning("All tokens revoked for user {UserId} due to security measures", userId);
+        }
+
+        private async Task<AuthResponseDto> GenerateAuthResponse(AppUser user, string message)
+        {
+            var jwtId = Guid.NewGuid().ToString();
+            var accessToken = GenerateJwtToken(user, jwtId);
+            var refreshToken = await GenerateRefreshToken(user, jwtId);
+
+            return new AuthResponseDto
+            {
+                Message = message,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["JwtSettings:ExpiryMinutes"])),
+                    User = new UserDto
+                    {
+                        Id = user.Id,
+                        Email = user.Email!,
+                        Name = user.Name,
+                        PhoneNumber = user.PhoneNumber,
+                        Location = user.Location,
+                        Image = user.Image,
+                        Verified = user.Verified,
+                        CreatedAt = user.CreatedAt
+                    }
+            };
+        }
         
     }
 }

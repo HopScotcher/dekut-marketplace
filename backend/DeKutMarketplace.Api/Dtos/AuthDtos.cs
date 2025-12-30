@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
+using DeKutMarketplace.Api.Attributes;
 using DeKutMarketplace.Api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Identity.Client;
@@ -21,6 +22,7 @@ namespace DeKutMarketplace.Api.Dtos
         
         [Required]
         [Phone]
+        [KenyanPhoneNumber]
         public string PhoneNumber {get; set;} = string.Empty;
         public string UserName {get; set;} = string.Empty;
 
@@ -69,6 +71,29 @@ namespace DeKutMarketplace.Api.Dtos
 
     }
 
+
+    public class AuthResponseDto
+    {
+        public string Message { get; set; } = string.Empty;
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTime ExpiresAt {get; set;}
+        public UserDto User {get; set;} = null!;
+    }
+
+    public class UserDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        
+        public string? PhoneNumber { get; set; }
+        public string? Location { get; set; }
+        public string? Image { get; set; }
+        public bool Verified {get; set;}
+        public DateTime CreatedAt {get; set;}
+
+    }
 
 
      public class RefreshTokenRequestDto
