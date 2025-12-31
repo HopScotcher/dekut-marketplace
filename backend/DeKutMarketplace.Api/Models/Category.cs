@@ -23,6 +23,6 @@ namespace DeKutMarketplace.Api.Models
         public string Slug {get; set;} = string.Empty;
 
 
-        public ICollection<Product> Products { get; set; }
+        public ICollection<Product>? Products { get; set; }
     }
 }
