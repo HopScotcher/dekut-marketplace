@@ -109,5 +109,13 @@ app.UseCors("NextjsClient");
 app.UseAuthentication();
 app.UseAuthorization();
 
+using(var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AppDbContext>();
+    
+    await CategorySeeder.SeedCategories(context);
+}
+
 app.MapControllers();
 app.Run();
