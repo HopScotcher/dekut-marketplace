@@ -42,6 +42,11 @@ namespace DeKutMarketplace.Api.Data
             builder.Entity<Product>()
             .HasIndex(p => p.Price);
 
+            builder.Entity<Category>()
+            .HasIndex(c => c.ParentCategoryId);
+
+            
+
 
 
             // rshps

@@ -17,7 +17,10 @@ namespace DeKutMarketplace.Api.Mappers.CategoryMappers
                 Name = categoryModel.Name,
                 Description = categoryModel.Description?? string.Empty,
                 Icon = categoryModel.Icon?? string.Empty,
-                ProductCount = categoryModel.Products?.Count?? 0
+                ParentCategoryId = categoryModel.ParentCategoryId,
+                ParentCategoryName = categoryModel.ParentCategory?.Name,
+                ProductCount = categoryModel.Products?.Count?? 0,
+                SubCategoryCount = categoryModel.SubCategories?.Count ?? 0
             };
 
         }

@@ -57,7 +57,7 @@ namespace DeKutMarketplace.Api.Controllers
             {
                 var createCategory = await _categoryService.CreateCategoryAsync(categoryDto);
 
-                return CreatedAtAction(nameof(GetCategoryById), new {id = createCategory.Id}, categoryDto );
+                return CreatedAtAction(nameof(GetCategoryById), new {id = createCategory.Id}, createCategory );
             }catch(Exception ex)
             {
                 return BadRequest(ex.Message);
