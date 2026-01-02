@@ -30,7 +30,7 @@ namespace DeKutMarketplace.Api.Models
         public string Images { get; set; } = "[]";
 
         [Required]
-        public string CategoryId { get; set; }
+        public string CategoryId { get; set; } = string.Empty;
 
         [ForeignKey(nameof(CategoryId))]
         public virtual Category? Category {get; set;}
@@ -45,18 +45,16 @@ namespace DeKutMarketplace.Api.Models
         [MaxLength(100)]
         public string Location {get; set;} = string.Empty;
 
-
         [Required]
         public ProductStatus Status { get; set; } = ProductStatus.Draft;
 
         [Required]
-        public string UserId { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; } 
-
         public string Tags {get;set;} = "[]";
 
         [ForeignKey(nameof(UserId))]
+        public string UserId { get; set; } = string.Empty;
         public virtual AppUser User{ get; set; } = null!; 
     }
 }
