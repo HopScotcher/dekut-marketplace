@@ -21,6 +21,24 @@ namespace DeKutMarketplace.Api.Services
         }
         public async Task<CategoryDto> CreateCategoryAsync(CreateCategoryDto createCategoryDto)
         {
+            // Trim whitespace from all incoming string properties
+            createCategoryDto.Name = createCategoryDto.Name.Trim();
+            if (createCategoryDto.Description != null)
+            {
+                createCategoryDto.Description = createCategoryDto.Description.Trim();
+            }
+            if (createCategoryDto.Icon != null)
+            {
+                createCategoryDto.Icon = createCategoryDto.Icon.Trim();
+            }
+            if (createCategoryDto.ParentCategoryId != null)
+            {
+                createCategoryDto.ParentCategoryId = createCategoryDto.ParentCategoryId.Trim();
+            }
+
+            var newCategory = new Category{
+
+            };
 
             if(!string.IsNullOrEmpty(createCategoryDto.ParentCategoryId)){
                 var parentCategory = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == createCategoryDto.ParentCategoryId);
@@ -32,18 +50,18 @@ namespace DeKutMarketplace.Api.Services
                 if(parentCategory.ParentCategoryId != null){
                     throw new ArgumentException("Cannot create a subcategory to a subcategory. Max depth is 2 levels");
                 }
+
+                newCategory.ParentCategoryId = createCategoryDto.ParentCategoryId;
             }
 
-            var newCategory = new Category
-            {
-                Name = createCategoryDto.Name,
-                Description = createCategoryDto.Description,
-                Icon = createCategoryDto.Icon,
-                Slug = createCategoryDto.Name.ToLower().Replace(" ", "-").Replace("&", "and").Replace("'", ""),
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                ParentCategoryId = createCategoryDto.ParentCategoryId
-            };
+
+             newCategory.Name = createCategoryDto.Name;
+                newCategory.Description = createCategoryDto.Description;
+                newCategory.Icon = createCategoryDto.Icon;
+                newCategory.Slug = createCategoryDto.Name.ToLower().Replace(" ", "-").Replace("&", "and").Replace("'", "");
+                newCategory.IsActive = true;
+                newCategory.CreatedAt = DateTime.UtcNow;
+                newCategory.ParentCategoryId = null;
 
 
             await _dbContext.Categories.AddAsync(newCategory);
@@ -117,6 +135,16 @@ namespace DeKutMarketplace.Api.Services
                 return null;
             }
 
+            if(updateCategoryDto.ParentCategoryId != category.ParentCategoryId)
+            {
+                if (string.IsNullOrEmpty(updateCategoryDto.ParentCategoryId))
+                {
+                    category.ParentCategoryId = null;
+                }
+            }
+
+            else
+            {
 
              if(updateCategoryDto.ParentCategoryId != null)
             {
@@ -144,11 +172,21 @@ namespace DeKutMarketplace.Api.Services
 
                 category.ParentCategoryId = updateCategoryDto.ParentCategoryId;
             }
+            }
 
-             if(updateCategoryDto.Name != null)
-            {
+             if(!string.IsNullOrWhiteSpace(updateCategoryDto.Name))
+            {     
+                var newSlug = updateCategoryDto.Name.ToLower().Replace("'", "").Replace("&", "and").Replace(" ", "-").Replace(",", "-");
+
+                var existingCategory = await _dbContext.Categories.FirstOrDefaultAsync(category => category.Slug == newSlug && category.Id != id);
+
+                if(existingCategory != null)
+                {
+                    throw new ArgumentException($"A category with the name '{updateCategoryDto.Name}' already exists");
+                }
+
                 category.Name = updateCategoryDto.Name;
-                category.Slug = updateCategoryDto.Name.ToLower().Replace("'", "").Replace("&", "and").Replace(" ", "-");
+                category.Slug = newSlug;
             }
 
              if(updateCategoryDto.Description != null)

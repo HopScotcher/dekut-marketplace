@@ -42,6 +42,26 @@ namespace DeKutMarketplace.Api.Controllers
             _emailService = emailService;
         }
 
+        [HttpGet("whoami")]
+        public async Task<IActionResult> WhoAmI(){
+            var user = await _userManager.GetUserAsync(User);
+
+            if(user == null)
+            {
+                return NotFound();
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                UserId = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Roles = roles
+            });
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register( [FromBody] RegisterDto registerDto)
         {
@@ -168,24 +188,30 @@ namespace DeKutMarketplace.Api.Controllers
         }
 
 
-        private string GenerateJwtToken(AppUser user, string jwtId)
+        private async Task<string> GenerateJwtToken(AppUser user, string jwtId)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Key"]!));
 
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email!),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId)
             };
 
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach(var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
             var token = new JwtSecurityToken(
                 issuer: _config["JwtSettings:Issuer"],
                 audience: _config["JwtSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_config["JwtSettings:ExpiryMinutes"])),
+                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["JwtSettings:ExpiryMinutes"])),
                 signingCredentials: credentials
             );
 
@@ -303,7 +329,7 @@ namespace DeKutMarketplace.Api.Controllers
         private async Task<AuthResponseDto> GenerateAuthResponse(AppUser user, string message)
         {
             var jwtId = Guid.NewGuid().ToString();
-            var accessToken = GenerateJwtToken(user, jwtId);
+            var accessToken = await GenerateJwtToken(user, jwtId);
             var refreshToken = await GenerateRefreshToken(user, jwtId);
 
             return new AuthResponseDto

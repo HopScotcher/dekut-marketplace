@@ -24,6 +24,8 @@ namespace DeKutMarketplace.Api.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
+        // public string Roles {get; set; } = string.Empty;
+
         public virtual ICollection<Product> Products { get; set; } = new List<Product>();
     }
 }

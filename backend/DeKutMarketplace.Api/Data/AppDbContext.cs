@@ -62,8 +62,7 @@ namespace DeKutMarketplace.Api.Data
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
-
-
+            
 
             List<IdentityRole> roles = new List<IdentityRole>
             {

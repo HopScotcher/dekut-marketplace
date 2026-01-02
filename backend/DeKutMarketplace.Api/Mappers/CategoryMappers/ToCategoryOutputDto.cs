@@ -15,6 +15,7 @@ namespace DeKutMarketplace.Api.Mappers.CategoryMappers
             {
                 Id = categoryModel.Id,
                 Name = categoryModel.Name,
+                Slug = categoryModel.Slug,
                 Description = categoryModel.Description?? string.Empty,
                 Icon = categoryModel.Icon?? string.Empty,
                 ParentCategoryId = categoryModel.ParentCategoryId,

@@ -94,9 +94,9 @@ namespace DeKutMarketplace.Api.Data
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = "Furniture",
-                Description = "New and used cars for sale",
-                Icon = "🚙",
-                Slug = "cars",
+                Description = "Tables, chairs, beds and other furniture",
+                Icon = "",
+                Slug = "furniture",
                 ParentCategoryId = homeAndAppliances.Id
             });
 
