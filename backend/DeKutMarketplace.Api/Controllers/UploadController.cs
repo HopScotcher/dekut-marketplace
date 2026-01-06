@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DeKutMarketplace.Api.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing.Constraints;
 
@@ -10,10 +11,12 @@ namespace DeKutMarketplace.Api.Controllers
     public class UploadController : ControllerBase
     {
         private readonly ILogger<UploadController> _logger;
+        private readonly IStorageService _storageService;
 
-        public UploadController(ILogger<UploadController> logger)
+        public UploadController(ILogger<UploadController> logger, IStorageService storageService)
         {
             _logger = logger;
+            _storageService = storageService;
         }
 
         [HttpPost("single")]
@@ -38,34 +41,23 @@ namespace DeKutMarketplace.Api.Controllers
                 return BadRequest(new {message = "File size cannot exceed 5MB"});
             }
 
-            var fileExtension = Path.GetExtension(file.FileName);
-            // create unique file names to prevent bugs
-            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-
-            if (!Directory.Exists(uploadsFolder))
+            try
             {
-                Directory.CreateDirectory(uploadsFolder);
+                var fileUrl = await _storageService.UploadFileAsync(file, "products");
+
+                return Ok(new
+                {
+                    message = "File uploaded successfully",
+                    url = fileUrl
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading file: {ErrorMessage}", ex.Message);
+                return StatusCode(500, new{message = "An error occured while uploading the file"});
             }
 
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using(var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            _logger.LogInformation("File uploaded successfully : {FileName}", uniqueFileName);
-
-
-            var fileUrl = $"{Request.Scheme}://{Request.Host}/uploads/{uniqueFileName}";
-
-            return Ok(new
-            {
-                message = "File Uploaded successfully",
-                fileName = uniqueFileName,
-                url = fileUrl            });
+             
         }
 
 
@@ -100,29 +92,20 @@ namespace DeKutMarketplace.Api.Controllers
                     return BadRequest(new {message = $"File {file.FileName} exceeds the 5MB file limit size"});
                 }
 
-                var fileExtension = Path.GetExtension(file.FileName);
-                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-
-                if (!Directory.Exists(uploadsFolder))
+                try
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    var urls = await _storageService.UploadFilesAsync(files, "products");
+
+                    return Ok(new
+                    {
+                        message = "Files uploaded successfully",
+                        urls = urls
+                    });
+                }catch(Exception ex)
+                {
+                    _logger.LogError(ex, "Error uploading files: {ErrorMessage}", ex.Message);
+                    return StatusCode(500, new {message = " An error occurred while uploading the files"});
                 }
-
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using(var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                var fileUrl = $"{Request.Scheme}://{Request.Host}/uploads/{uniqueFileName}";
-
-                uploadedFiles.Add(new
-                {
-                    fileName = uniqueFileName,
-                    url = fileUrl
-                });
             }
 
             _logger.LogInformation("Uploaded {count} files successfully", uploadedFiles.Count); 
@@ -132,6 +115,34 @@ namespace DeKutMarketplace.Api.Controllers
                 message = "Files uploaded successfully",
                 files = uploadedFiles
             });
+        }
+
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteFile([FromQuery] string fileUrl)
+        {
+            if (string.IsNullOrEmpty(fileUrl))
+            {
+                return BadRequest(new {message = " File URL is required"});
+            }
+
+            try
+            {
+                var result = await _storageService.DeleteFileAsync(fileUrl);
+
+                if (result)
+                {
+                    return Ok(new {message = "File deleted successfully"});
+                }
+
+                return NotFound(new {message = "File not found"});
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting file");
+                return StatusCode(500, new {message = "An error occurred while deleting the file"});
+                
+            }
         }
     }
 }
