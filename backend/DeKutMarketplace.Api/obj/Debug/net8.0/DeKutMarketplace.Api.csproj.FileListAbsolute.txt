@@ -157,3 +157,4 @@ C:\CODING\nextjs\dekut-marketplace\backend\DeKutMarketplace.Api\obj\Debug\net8.0
 C:\CODING\nextjs\dekut-marketplace\backend\DeKutMarketplace.Api\obj\Debug\net8.0\DeKutMarketplace.Api.pdb
 C:\CODING\nextjs\dekut-marketplace\backend\DeKutMarketplace.Api\obj\Debug\net8.0\DeKutMarketplace.Api.genruntimeconfig.cache
 C:\CODING\nextjs\dekut-marketplace\backend\DeKutMarketplace.Api\obj\Debug\net8.0\ref\DeKutMarketplace.Api.dll
+C:\CODING\nextjs\dekut-marketplace\backend\DeKutMarketplace.Api\bin\Debug\net8.0\DeKutMarketplace.Api.staticwebassets.runtime.json

@@ -118,7 +118,7 @@ namespace DeKutMarketplace.Api.Services
                 productsQuery = productsQuery.Where(p => p.CategoryId == query.CategoryId);
             }
 
-            if (string.IsNullOrWhiteSpace(query.SellerId))
+            if (!string.IsNullOrWhiteSpace(query.SellerId))
             {
                 productsQuery = productsQuery.Where(p => p.UserId == query.SellerId);
             }
@@ -191,7 +191,7 @@ namespace DeKutMarketplace.Api.Services
 
             if(updateProduct.Negotiable.HasValue)
             {
-                productToUpdate.Negotiable = updateProduct.Negotiable.HasValue;
+                productToUpdate.Negotiable = updateProduct.Negotiable.Value;
             }
 
             if(updateProduct.Condition.HasValue)

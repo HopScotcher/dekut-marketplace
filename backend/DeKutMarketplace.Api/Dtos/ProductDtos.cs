@@ -51,11 +51,12 @@ namespace DeKutMarketplace.Api.Dtos
 
         [Required]
         public string CategoryId {get; set;} = string.Empty;
-
         public bool Negotiable { get; set; } = true;
         public string Images {get; set;} = "[]";
         public string Tags {get; set;} = "[]";
         public ProductCondition Condition {get; set;} = ProductCondition.Refurbished;
+
+
 
         
 

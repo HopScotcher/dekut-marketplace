@@ -127,7 +127,7 @@ namespace DeKutMarketplace.Api.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAllProducts([FromQuery] QueryObject query)
         {
-            var products = _productService.GetAllProductsAsync(query);
+            var products = await _productService.GetAllProductsAsync(query);
 
             return Ok(products);
         }

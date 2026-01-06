@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DeKutMarketplace.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1688f26b58a5c688b74f9fca82220c37b65aba76")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6cb2ba713124e97f1c4f30e5adc01eadce67c763")]
 [assembly: System.Reflection.AssemblyProductAttribute("DeKutMarketplace.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DeKutMarketplace.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
