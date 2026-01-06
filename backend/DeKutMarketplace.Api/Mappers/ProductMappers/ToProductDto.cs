@@ -22,7 +22,6 @@ namespace DeKutMarketplace.Api.Mappers.ProductMappers
                 CreatedAt = product.CreatedAt,
                 Location = product.Location,
                 Images = product.Images,
-                Status = product.Status,
                 Condition = product.Condition,
                 CategoryName = product.Category?.Name ?? string.Empty,
                 CategoryId = product.CategoryId,

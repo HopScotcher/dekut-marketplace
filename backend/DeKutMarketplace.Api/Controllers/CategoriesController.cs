@@ -88,6 +88,11 @@ namespace DeKutMarketplace.Api.Controllers
             try
             {
             var category = await _categoryService.DeleteCategoryAsync(id);
+
+            if(category == null)
+                {
+                    return NotFound();
+                }
             
             return NoContent();
             }

@@ -55,7 +55,6 @@ namespace DeKutMarketplace.Api.Dtos
         public bool Negotiable { get; set; } = true;
         public string Images {get; set;} = "[]";
         public string Tags {get; set;} = "[]";
-        public ProductStatus Status {get; set;}
         public ProductCondition Condition {get; set;} = ProductCondition.Refurbished;
 
         
