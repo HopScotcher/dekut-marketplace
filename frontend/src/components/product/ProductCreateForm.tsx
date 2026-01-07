@@ -2,13 +2,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Upload, X, ImageIcon } from "lucide-react";
-import { mockCategories } from "@/data/mock-data";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -31,7 +30,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-import { Product } from "@/lib/types";
+import { CreateProductDto, ProductCondition, CategoryDto } from "@/lib/types";
+import { uploadProductImages, createProduct } from "@/services/productService";
+import { getStoredUser } from "@/services/authService";
+import { getAllCategories } from "@/services/categoryService";
 
 // Predefined categories
 // const CATEGORIES = [
@@ -57,29 +59,26 @@ const productSchema = z.object({
   name: z
     .string()
     .min(1, "Product name is required")
-    .max(100, "Name must be less than 100 characters"),
+    .max(200, "Name must be less than 200 characters"),
   description: z
     .string()
     .min(10, "Description must be at least 10 characters")
-    .max(1000, "Description must be less than 1000 characters"),
+    .max(2000, "Description must be less than 2000 characters"),
   price: z.string().refine((val) => {
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
   }, "Price must be a valid positive number"),
-  originalPrice: z
+  location: z
     .string()
-    .optional()
-    .refine((val) => {
-      if (val === undefined || val === "") return true;
-      const num = parseFloat(val);
-      return !isNaN(num) && num > 0;
-    }, "Original price must be a valid positive number"),
+    .min(1, "Location is required")
+    .max(100, "Location must be less than 100 characters"),
   category: z.string().min(1, "Please select a category"),
-  condition: z.enum(["new", "used", "refurbished"], {
+  condition: z.enum(["New", "Used", "Refurbished"], {
     required_error: "Please select a condition",
   }),
   brand: z.string().optional(),
   tags: z.string().optional(),
+  negotiable: z.boolean(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -88,7 +87,6 @@ interface ImageFile {
   id: string;
   file: File;
   preview: string;
-  base64: string;
 }
 
 export default function ProductCreateForm() {
@@ -98,8 +96,29 @@ export default function ProductCreateForm() {
   const [currentStatus, setCurrentStatus] = useState<
     "draft" | "published" | null
   >(null);
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
   const router = useRouter();
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const allCategories = await getAllCategories();
+        setCategories(allCategories);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories", {
+          description: "Please refresh the page to try again.",
+        });
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -107,23 +126,14 @@ export default function ProductCreateForm() {
       name: "",
       description: "",
       price: "",
-      originalPrice: "",
+      location: "",
       category: "",
-      condition: "used",
+      condition: "Used",
       brand: "",
       tags: "",
+      negotiable: true,
     },
   });
-
-  // Convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
 
   // Handle file upload
   const handleFileUpload = async (files: FileList | null) => {
@@ -157,25 +167,12 @@ export default function ProductCreateForm() {
       return;
     }
 
-    // Process files
-    const newImages: ImageFile[] = [];
-    for (const file of validFiles) {
-      try {
-        const base64 = await fileToBase64(file);
-        const imageFile: ImageFile = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          file,
-          preview: URL.createObjectURL(file),
-          base64,
-        };
-        newImages.push(imageFile);
-      } catch (error) {
-        console.error("Error converting file to base64:", error);
-        toast.error("Upload error", {
-          description: "Failed to process image. Please try again.",
-        });
-      }
-    }
+    // Process files - no base64 conversion needed
+    const newImages: ImageFile[] = validFiles.map((file) => ({
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      file,
+      preview: URL.createObjectURL(file),
+    }));
 
     setImages((prev) => [...prev, ...newImages]);
   };
@@ -227,61 +224,49 @@ export default function ProductCreateForm() {
       return;
     }
 
+    // Check if user is logged in
+    const user = getStoredUser();
+    if (!user) {
+      toast.error("Authentication required", {
+        description: "Please sign in to create a product.",
+      });
+      router.push("/auth/signin?callbackUrl=/sell");
+      return;
+    }
+
     setIsSubmitting(true);
     setCurrentStatus(status);
 
     try {
-      // Step 1: Upload images to .NET backend
-      const { uploadFiles } = await import("@/lib/apiClient");
-      const imageFiles = images.map((img) => img.file);
-
+      // Step 1: Upload images to backend
       toast.info("Uploading images...", {
         description: "Please wait while we upload your images.",
       });
 
-      const imageUrls = await uploadFiles("/api/upload/images", imageFiles);
+      const imageFiles = images.map((img) => img.file);
+      const imageUrls = await uploadProductImages(imageFiles);
 
-      // Step 2: Get current user from session
-      const { useSession } = await import("next-auth/react");
-      const session = await import("next-auth/react").then((m) =>
-        m.getSession()
-      );
-
-      if (!session?.user?.id) {
-        toast.error("Authentication required", {
-          description: "Please sign in to create a product.",
-        });
-        router.push("/auth/signin");
-        return;
-      }
-
-      // Step 3: Create product via .NET API
-      const { api } = await import("@/lib/apiClient");
-      const productData = {
+      // Step 2: Create product via backend API
+      const productData: CreateProductDto = {
         name: data.name,
         description: data.description,
         price: parseFloat(data.price),
-        originalPrice: data.originalPrice
-          ? parseFloat(data.originalPrice)
-          : undefined,
-        images: imageUrls,
-        category:
-          mockCategories.find((cat) => cat.id === data.category)?.name || "",
-        brand: data.brand || undefined,
-        condition: data.condition,
+        location: data.location,
+        categoryId: data.category,
+        negotiable: data.negotiable,
+        images: JSON.stringify(imageUrls),
         tags: data.tags
-          ? data.tags
-              .split(",")
-              .map((tag) => tag.trim())
-              .filter(Boolean)
-          : [],
-        status: status,
+          ? JSON.stringify(
+              data.tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter(Boolean)
+            )
+          : "[]",
+        condition: data.condition as unknown as ProductCondition,
       };
 
-      const createdProduct = await api.post<Product>(
-        "/api/products",
-        productData
-      );
+      const createdProduct = await createProduct(productData);
 
       if (status === "published") {
         toast.success("Product listed successfully!", {
@@ -297,7 +282,9 @@ export default function ProductCreateForm() {
     } catch (error: any) {
       console.error("Error creating product:", error);
       const errorMessage =
-        error.message || "Something went wrong. Please try again.";
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong. Please try again.";
       toast.error("Product was not listed!", {
         description: errorMessage,
       });
@@ -412,7 +399,7 @@ export default function ProductCreateForm() {
           )}
         />
 
-        {/* Price Fields */}
+        {/* Price and Location */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -423,13 +410,13 @@ export default function ProductCreateForm() {
                 <FormControl>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                      $
+                      KSh
                     </span>
                     <Input
                       type="number"
                       step="0.01"
                       placeholder="0.00"
-                      className="pl-8"
+                      className="pl-12"
                       {...field}
                     />
                   </div>
@@ -441,23 +428,12 @@ export default function ProductCreateForm() {
 
           <FormField
             control={form.control}
-            name="originalPrice"
+            name="location"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Original Price (optional)</FormLabel>
+                <FormLabel>Location *</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                      $
-                    </span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-8"
-                      {...field}
-                    />
-                  </div>
+                  <Input placeholder="e.g., Nairobi, Kenya" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -472,16 +448,28 @@ export default function ProductCreateForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Category *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isLoadingCategories}
+              >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue
+                      placeholder={
+                        isLoadingCategories
+                          ? "Loading categories..."
+                          : "Select a category"
+                      }
+                    />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {mockCategories.map((category) => (
+                  {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
-                      {category.name}
+                      {category.parentCategoryName
+                        ? `${category.parentCategoryName} > ${category.name}`
+                        : category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -505,15 +493,15 @@ export default function ProductCreateForm() {
                   className="flex flex-col space-y-2"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="new" id="new" />
+                    <RadioGroupItem value="New" id="new" />
                     <Label htmlFor="new">New</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="used" id="used" />
+                    <RadioGroupItem value="Used" id="used" />
                     <Label htmlFor="used">Used</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="refurbished" id="refurbished" />
+                    <RadioGroupItem value="Refurbished" id="refurbished" />
                     <Label htmlFor="refurbished">Refurbished</Label>
                   </div>
                 </RadioGroup>
@@ -552,6 +540,27 @@ export default function ProductCreateForm() {
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Negotiable */}
+        <FormField
+          control={form.control}
+          name="negotiable"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Price is negotiable</FormLabel>
+              </div>
             </FormItem>
           )}
         />

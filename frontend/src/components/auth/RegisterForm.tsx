@@ -115,7 +115,9 @@ export default function RegisterForm() {
     <div className="space-y-6">
       <div>
         <h2 className="font-bold">Create your account</h2>
-        <p className="text-sm text-gray-500 mt-1">Fill in the form below to get started</p>
+        <p className="text-sm text-gray-500 mt-1">
+          Fill in the form below to get started
+        </p>
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

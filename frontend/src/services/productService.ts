@@ -3,7 +3,12 @@
  * All product-related operations now go through the .NET API
  */
 import { api } from "@/lib/apiClient";
-import { Product } from "@/lib/types";
+import {
+  Product,
+  ProductDto,
+  CreateProductDto,
+  UpdateProductDto,
+} from "@/lib/types";
 
 /**
  * Get all published products
@@ -154,13 +159,70 @@ export async function getFilteredProducts(
   };
 }
 
-/**
- * Check if product exists
- * @param productId - Product ID to check
- * @returns Promise<boolean>
- */
-export async function productExists(productId: string): Promise<boolean> {
-  await simulateDelay(100); // Shorter delay for existence check
+// /**
+//  * Check if product exists
+//  * @param productId - Product ID to check
+//  * @returns Promise<boolean>
+//  */
+// export async function productExists(productId: string): Promise<boolean> {
+//   await simulateDelay(100); // Shorter delay for existence check
 
-  return mockProducts.some((p) => p.id === productId);
+//   return mockProducts.some((p) => p.id === productId);
+// }
+
+/**
+ * Upload multiple product images
+ * @param files - Array of image files to upload
+ * @returns Promise<string[]> - Array of uploaded image URLs
+ */
+export async function uploadProductImages(files: File[]): Promise<string[]> {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const response = await api.post<{ message: string; urls: string[] }>(
+    "/api/upload/multiple",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.urls;
+}
+
+/**
+ * Create a new product
+ * @param data - Product creation data
+ * @returns Promise<ProductDto>
+ */
+export async function createProduct(
+  data: CreateProductDto
+): Promise<ProductDto> {
+  return api.post<ProductDto>("/api/products", data);
+}
+
+/**
+ * Update an existing product
+ * @param productId - Product ID to update
+ * @param data - Product update data
+ * @returns Promise<ProductDto>
+ */
+export async function updateProduct(
+  productId: string,
+  data: UpdateProductDto
+): Promise<ProductDto> {
+  return api.put<ProductDto>(`/api/products/${productId}`, data);
+}
+
+/**
+ * Delete a product
+ * @param productId - Product ID to delete
+ * @returns Promise<void>
+ */
+export async function deleteProduct(productId: string): Promise<void> {
+  return api.delete(`/api/products/${productId}`);
 }
