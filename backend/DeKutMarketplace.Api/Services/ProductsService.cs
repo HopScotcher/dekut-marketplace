@@ -17,10 +17,14 @@ namespace DeKutMarketplace.Api.Services
     public class ProductsService : IProductService
     { 
         private readonly AppDbContext _dbContext;
+        private readonly IStorageService _storageService;
+        private readonly ILogger<ProductsService> _logger;
          
-        public ProductsService(AppDbContext dbContext)
+        public ProductsService(AppDbContext dbContext, IStorageService storageService, ILogger<ProductsService> logger)
         {
             _dbContext = dbContext;
+            _storageService = storageService;
+            _logger = logger;
           
         }
         public async Task<ProductDto?> CreateProductAsync(CreateProductDto createProduct, string userId)
@@ -58,7 +62,7 @@ namespace DeKutMarketplace.Api.Services
 
         public async Task<ProductDto?> DeleteProductAsync(string id, string userId, IList<string> userRoles)
         {
-            var product = await _dbContext.Products.Include(p => p.UserId).FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _dbContext.Products.Include(p => p.UserId).Include(p => p.Images).FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
             {
@@ -73,6 +77,23 @@ namespace DeKutMarketplace.Api.Services
                 throw new UnauthorizedAccessException("Your are not authorized to delete this listing");
             }
 
+             if(!string.IsNullOrEmpty(product.Images) &&  product.Images != "[]")
+            {
+                try
+                {
+                    var imageUrls = System.Text.Json.JsonSerializer.Deserialize<List<string>>(product.Images);
+                    if(imageUrls != null && imageUrls.Count > 0)
+                    {
+                        foreach(var imageUrl in imageUrls)
+                        {
+                            await _storageService.DeleteFileAsync(imageUrl);
+                        }
+                    }
+                }catch(Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete images for product {product}", product);
+                }
+            }
             
             _dbContext.Products.Remove(product);
             await _dbContext.SaveChangesAsync();

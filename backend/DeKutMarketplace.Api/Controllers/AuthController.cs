@@ -69,7 +69,7 @@ namespace DeKutMarketplace.Api.Controllers
 
             if(user != null)
             {
-                BadRequest("Email is already in use");
+                return BadRequest(new { message = "Email is already in use" });
             }
 
             var newUser = new AppUser
@@ -88,7 +88,7 @@ namespace DeKutMarketplace.Api.Controllers
             if (!registerResult.Succeeded)
             {
                 _logger.LogError("Failed to create account for {Email}, Errors: {Errors}", newUser.Email, registerResult.Errors);
-                BadRequest(registerResult.Errors);
+                return BadRequest(new { message = "Registration failed", errors = registerResult.Errors.Select(e => new { field = e.Code, message = e.Description }) });
             }
 
 
@@ -109,28 +109,24 @@ namespace DeKutMarketplace.Api.Controllers
 
              if(user == null)
             {
-                BadRequest("Email or password is incorrect");
+                return Unauthorized(new { message = "Incorrect email or password" });
             }
 
             var passwordCheck = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
 
             if (passwordCheck.Succeeded)
             {
-
-
-            var authResponse = await GenerateAuthResponse(user, "Login successful");
-
-            return Ok(authResponse);
+                var authResponse = await GenerateAuthResponse(user, "Login successful");
+                return Ok(authResponse);
             }
 
             if (passwordCheck.IsLockedOut)
             {
                 _logger.LogWarning("User account {Email} locked out", user.Email);
-                return StatusCode(StatusCodes.Status403Forbidden, "Tjis account has been locked, try again later");
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "This account has been locked, try again later" });
             }
 
-            return Unauthorized("Incorrect email or password");
-
+            return Unauthorized(new { message = "Incorrect email or password" });
         }
 
 

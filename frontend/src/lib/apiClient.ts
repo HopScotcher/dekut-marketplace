@@ -3,7 +3,7 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getSession } from "next-auth/react";
+import { getValidAccessToken, clearTokens } from "@/services/authService";
 
 /**
  * Base API client for .NET backend
@@ -11,7 +11,7 @@ import { getSession } from "next-auth/react";
  */
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://localhost:7285";
 
 // Create axios instance with base configuration
 const apiClient: AxiosInstance = axios.create({
@@ -22,19 +22,24 @@ const apiClient: AxiosInstance = axios.create({
   timeout: 30000, // 30 seconds
 });
 
-// Request interceptor - Add JWT token to requests
+// Request interceptor - Add JWT token to requests and handle auto-refresh
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    // Get NextAuth session
-    const session = await getSession();
+    // Skip auth header for auth endpoints
+    if (
+      config.url?.includes("/auth/register") ||
+      config.url?.includes("/auth/login") ||
+      config.url?.includes("/auth/forgot-password") ||
+      config.url?.includes("/auth/reset-password")
+    ) {
+      return config;
+    }
 
-    if (session?.user) {
-      // Add JWT token to Authorization header
-      // The token should be available in your NextAuth JWT callback
-      const token = (session as any).accessToken;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    // Get valid token (will auto-refresh if needed)
+    const token = await getValidAccessToken();
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
@@ -47,7 +52,7 @@ apiClient.interceptors.request.use(
 // Response interceptor - Handle errors globally
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     // Handle different error scenarios
     if (error.response) {
       // Server responded with error status
@@ -56,9 +61,15 @@ apiClient.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // Unauthorized - redirect to login
+          // Unauthorized - clear tokens and redirect to login
           console.error("Unauthorized access - please login");
-          // You might want to trigger a sign-out or redirect here
+          clearTokens();
+          if (
+            typeof window !== "undefined" &&
+            !window.location.pathname.includes("/auth")
+          ) {
+            window.location.href = "/auth/signin";
+          }
           break;
         case 403:
           console.error("Forbidden - insufficient permissions");

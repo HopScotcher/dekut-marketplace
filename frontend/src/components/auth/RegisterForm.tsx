@@ -16,9 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { registerSchema, type RegisterFormData } from "@/lib/validations";
-import OAuthButton from "@/components/auth/OAuthButton";
 // import PasswordStrengthIndicator from '@/components/auth/PasswordStrengthIndicator'
 import { toast } from "sonner";
 
@@ -49,33 +47,63 @@ export default function RegisterForm() {
     try {
       const { registerUser } = await import("@/services/authService");
 
-      await registerUser({
-        name: data.name,
+      // Call backend API - tokens are automatically stored by authService
+      const response = await registerUser({
+        userName: data.name,
         email: data.email,
         password: data.password,
-        phone: data.phone,
+        phoneNumber: data.phone || "",
         location: data.location,
       });
 
       toast.success("Account created successfully!", {
-        description: "Please sign in with your new account.",
+        description: `Welcome, ${response.user.name}! You're now logged in.`,
       });
 
-      router.push("/auth/signin");
+      // Auto-login successful - redirect to home or dashboard
+      router.push("/");
+      router.refresh();
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      const errorMessage = error.response?.data?.message || error.message;
+      // Handle backend validation errors
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
 
-      if (errorMessage?.includes("already exists")) {
+        // Set field-specific errors from backend
+        if (Array.isArray(errors)) {
+          errors.forEach((err: any) => {
+            const field = err.field?.toLowerCase();
+            if (field === "email") {
+              form.setError("email", { message: err.message });
+            } else if (field === "password") {
+              form.setError("password", { message: err.message });
+            } else if (field === "phonenumber" || field === "phone") {
+              form.setError("phone", { message: err.message });
+            } else if (field === "username" || field === "name") {
+              form.setError("name", { message: err.message });
+            }
+          });
+        }
+      }
+
+      // Handle general error messages
+      const errorMessage =
+        error.response?.data?.message || error.message || "Registration failed";
+
+      if (errorMessage?.toLowerCase().includes("already")) {
         toast.error("Account already exists", {
           description:
             "An account with this email already exists. Please sign in instead.",
         });
+      } else if (errorMessage?.toLowerCase().includes("phone")) {
+        toast.error("Invalid phone number", {
+          description:
+            "Please use Kenyan format: +254712345678 or +254112345678",
+        });
       } else {
         toast.error("Registration failed", {
-          description:
-            errorMessage || "An unexpected error occurred. Please try again.",
+          description: errorMessage,
         });
       }
     } finally {
@@ -85,19 +113,9 @@ export default function RegisterForm() {
 
   return (
     <div className="space-y-6">
-      <OAuthButton provider="google">Continue with Google</OAuthButton>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500">OR</span>
-        </div>
-      </div>
-
       <div>
         <h2 className="font-bold">Create your account</h2>
+        <p className="text-sm text-gray-500 mt-1">Fill in the form below to get started</p>
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -144,11 +162,11 @@ export default function RegisterForm() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone (Optional)</FormLabel>
+                  <FormLabel>Phone Number *</FormLabel>
                   <FormControl>
                     <Input
                       type="tel"
-                      // placeholder="Enter your phone number"
+                      placeholder="+254712345678"
                       disabled={isLoading}
                       {...field}
                     />

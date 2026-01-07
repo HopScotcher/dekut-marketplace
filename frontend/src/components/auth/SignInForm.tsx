@@ -1,74 +1,105 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Eye, EyeOff } from 'lucide-react'
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
-import { Button } from '@/components/ui/button'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import { signInSchema, type SignInFormData } from '@/lib/validations'
-import OAuthButton from '@/components/auth/OAuthButton'
-import ForgotPasswordDialog from '@/components/auth/ForgotPasswordDialog'
-import { toast } from 'sonner'
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { signInSchema, type SignInFormData } from "@/lib/validations";
+import ForgotPasswordDialog from "@/components/auth/ForgotPasswordDialog";
+import { toast } from "sonner";
 
 export default function SignInForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showForgotPassword, setShowForgotPassword] = useState(false)
-  
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/'
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
-  })
+  });
 
   const onSubmit = async (data: SignInFormData) => {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
+      const { loginUser } = await import("@/services/authService");
+
+      // Call backend API - tokens are automatically stored by authService
+      const response = await loginUser({
         email: data.email,
         password: data.password,
-        redirect: false,
-        callbackUrl,
-      })
+      });
 
-      if (result?.error) {
-        if (result.error === 'CredentialsSignin') {
-          toast.error('Invalid credentials', {
-            description: 'Please check your email and password and try again.',
-          })
-        } else {
-          toast.error('Sign in failed', {
-            description: 'An error occurred during sign in. Please try again.',
-          })
+      toast.success("Welcome back!", {
+        description: `Signed in as ${response.user.name}`,
+      });
+
+      // Redirect to callback URL or home
+      router.push(callbackUrl);
+      router.refresh();
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+
+      // Handle backend validation errors
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+
+        // Set field-specific errors from backend
+        if (Array.isArray(errors)) {
+          errors.forEach((err: any) => {
+            const field = err.field?.toLowerCase();
+            if (field === "email") {
+              form.setError("email", { message: err.message });
+            } else if (field === "password") {
+              form.setError("password", { message: err.message });
+            }
+          });
         }
-      } else if (result?.url) {
-        toast.success('Welcome back!', {
-          description: 'You have successfully signed in.',
-        })
-        router.push(callbackUrl)
       }
-    } catch (error) {
-      console.error('Sign in error:', error)
-      toast.error('Sign in failed', {
-        description: 'An unexpected error occurred. Please try again.',
-      })
+
+      // Handle general error messages
+      const errorMessage = error.response?.data?.message || error.message;
+
+      if (
+        errorMessage?.toLowerCase().includes("incorrect") ||
+        errorMessage?.toLowerCase().includes("invalid")
+      ) {
+        toast.error("Invalid credentials", {
+          description: "Please check your email and password and try again.",
+        });
+      } else if (errorMessage?.toLowerCase().includes("locked")) {
+        toast.error("Account locked", {
+          description: "Your account has been locked. Please try again later.",
+        });
+      } else {
+        toast.error("Sign in failed", {
+          description:
+            errorMessage || "An unexpected error occurred. Please try again.",
+        });
+      }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -102,7 +133,7 @@ export default function SignInForm() {
                 <FormControl>
                   <div className="relative">
                     <Input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       disabled={isLoading}
                       {...field}
@@ -143,28 +174,15 @@ export default function SignInForm() {
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
       </Form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500">Or continue with</span>
-        </div>
-      </div>
-
-      <OAuthButton provider="google" callbackUrl={callbackUrl}>
-        Continue with Google
-      </OAuthButton>
 
       <ForgotPasswordDialog
         open={showForgotPassword}
         onOpenChange={setShowForgotPassword}
       />
     </div>
-  )
+  );
 }

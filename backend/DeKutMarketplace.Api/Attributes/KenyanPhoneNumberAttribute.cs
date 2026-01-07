@@ -23,13 +23,12 @@ namespace DeKutMarketplace.Api.Attributes
 
             string phoneNumber = value.ToString()!;
 
-            if (KenyanPhoneRegex.IsMatch(phoneNumber))
+            if (!KenyanPhoneRegex.IsMatch(phoneNumber))
             {
                 return new ValidationResult("Phone number must be in Kenyan format: +254712345678 or +254112345678");
             }
 
-            return ValidationResult.Success
-            ;
+            return ValidationResult.Success;
         }
     }
 }

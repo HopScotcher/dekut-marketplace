@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DeKutMarketplace.Api.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing.Constraints;
 
 namespace DeKutMarketplace.Api.Controllers
 {
+    [ApiController]
+    [Route("api/upload")]
+    // [Authorize]
     public class UploadController : ControllerBase
     {
         private readonly ILogger<UploadController> _logger;
@@ -91,30 +95,25 @@ namespace DeKutMarketplace.Api.Controllers
                 {
                     return BadRequest(new {message = $"File {file.FileName} exceeds the 5MB file limit size"});
                 }
+            }
 
                 try
                 {
                     var urls = await _storageService.UploadFilesAsync(files, "products");
+                    _logger.LogInformation("Uploaded {count} files successfully", urls.Count);
 
                     return Ok(new
                     {
                         message = "Files uploaded successfully",
                         urls = urls
                     });
-                }catch(Exception ex)
+                }
+                catch(Exception ex)
                 {
                     _logger.LogError(ex, "Error uploading files: {ErrorMessage}", ex.Message);
                     return StatusCode(500, new {message = " An error occurred while uploading the files"});
                 }
-            }
-
-            _logger.LogInformation("Uploaded {count} files successfully", uploadedFiles.Count); 
-
-            return Ok(new
-            {
-                message = "Files uploaded successfully",
-                files = uploadedFiles
-            });
+         
         }
 
 

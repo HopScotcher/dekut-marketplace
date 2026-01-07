@@ -1,17 +1,19 @@
-import { auth } from "./auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const session = await auth();
+  // Check for access token in cookies or headers
+  const token = request.cookies.get("dekut_access_token")?.value;
 
   // Protect /user and /sell routes
   if (
     request.nextUrl.pathname.startsWith("/user") ||
     request.nextUrl.pathname.startsWith("/sell")
   ) {
-    if (!session) {
-      return NextResponse.redirect(new URL("/auth/signin", request.url));
+    if (!token) {
+      const signInUrl = new URL("/auth/signin", request.url);
+      signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+      return NextResponse.redirect(signInUrl);
     }
   }
 

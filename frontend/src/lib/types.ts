@@ -3,198 +3,213 @@
  * These types should match the C# models returned by the .NET API
  */
 
-// User related types
-export interface User {
+// ============================================
+// AUTHENTICATION DTOs
+// ============================================
+
+export interface RegisterDto {
+  email: string;
+  password: string;
+  phoneNumber: string;
+  userName: string;
+  profileImage?: string;
+  location?: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface ForgotPasswordDto {
+  email: string;
+}
+
+export interface ResetPasswordDto {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
+export interface RefreshTokenRequestDto {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthResponseDto {
+  message: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string; // ISO date string
+  user: UserDto;
+}
+
+export interface UserDto {
   id: string;
-  name: string | null;
-  email: string | null;
-  emailVerified: string | null; // ISO date string
-  image: string | null;
-  phone: string | null;
-  location: string | null;
+  email: string;
+  name: string;
+  phoneNumber?: string;
+  location?: string;
+  image?: string;
   verified: boolean;
   createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
-  avatar: string | null;
 }
 
 // Simplified User for nested relations
 export interface UserSummary {
   id: string;
   name: string;
-  avatar: string | null;
+  image?: string;
 }
 
-// Product related types
-export interface Product {
+// ============================================
+// PRODUCT DTOs & ENUMS
+// ============================================
+
+export enum ProductStatus {
+  Draft = "Draft",
+  Published = "Published",
+  Sold = "Sold",
+  Expired = "Expired",
+}
+
+export enum ProductCondition {
+  New = "New",
+  Used = "Used",
+  Refurbished = "Refurbished",
+}
+
+export interface ProductDto {
   id: string;
   name: string;
   description: string;
   price: number;
-  originalPrice?: number;
-  images: string[]; // Array of image URLs from blob storage
-  category: string;
-  categoryId?: string; // Future: FK to Category table
-  brand?: string;
-  rating?: number; // Computed from reviews
-  reviewCount?: number; // Count of reviews
-  condition: "new" | "used" | "refurbished";
-  tags?: string[];
+  condition: ProductCondition;
+  status: ProductStatus;
+  images: string; // JSON string array from backend
+  tags: string; // JSON string array from backend
+  location: string;
   createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
-  location?: string;
-  user: UserSummary; // Nested user object
-  status: "draft" | "published";
-  userId: string;
+  negotiable: boolean;
+  // Navigation properties
+  categoryId: string;
+  categoryName: string;
+  sellerId: string;
+  sellerName: string;
 }
 
-// Product create/update request (sent to .NET API)
-export interface ProductCreateRequest {
+// Helper interface with parsed arrays
+export interface Product extends Omit<ProductDto, "images" | "tags"> {
+  images: string[];
+  tags: string[];
+}
+
+export interface CreateProductDto {
   name: string;
   description: string;
   price: number;
-  originalPrice?: number;
-  images: string[]; // URLs returned from image upload endpoint
-  category: string;
-  brand?: string;
-  condition: "new" | "used" | "refurbished";
-  tags?: string[];
+  location: string;
+  categoryId: string;
+  negotiable: boolean;
+  images: string; // JSON string array
+  tags: string; // JSON string array
+  condition: ProductCondition;
+}
+
+export interface UpdateProductDto {
+  name?: string;
+  description?: string;
+  price?: number;
   location?: string;
-  status: "draft" | "published";
+  tags?: string;
+  negotiable?: boolean;
+  categoryId?: string;
+  status?: ProductStatus;
+  condition?: ProductCondition;
+  images?: string;
 }
 
-export interface ProductUpdateRequest extends Partial<ProductCreateRequest> {
-  id: string;
-}
+// ============================================
+// CATEGORY DTOs
+// ============================================
 
-// Category related types (future implementation)
-export interface Category {
+export interface CategoryDto {
   id: string;
   name: string;
-  description: string | null;
-  image: string | null;
-  parentId?: string | null;
   slug: string;
+  description: string;
+  icon: string;
   productCount: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  parentCategoryId?: string;
+  parentCategoryName?: string;
+  subCategoryCount: number;
 }
 
-// Order related types (future implementation)
-export interface OrderItem {
-  id: string;
-  productId: string;
-  product: Product;
-  quantity: number;
-  priceAtPurchase: number; // Price snapshot at time of order
-  subtotal: number;
+export interface CreateCategoryDto {
+  name: string;
+  description?: string;
+  icon?: string;
+  parentCategoryId?: string;
 }
 
-export interface Order {
-  id: string;
-  userId: string;
-  items: OrderItem[];
-  totalAmount: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-  shippingAddress: string; // JSON or separate Address object
-  billingAddress: string;
-  paymentMethod: string;
-  paymentStatus: "pending" | "paid" | "refunded";
-  trackingNumber?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  deliveredAt?: string | null;
+export interface UpdateCategoryDto {
+  name?: string;
+  description?: string;
+  icon?: string;
+  parentCategoryId?: string;
 }
 
-// Address type (future implementation)
-export interface Address {
-  id: string;
-  street: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-}
+// ============================================
+// QUERY & FILTER DTOs
+// ============================================
 
-// Review type (future implementation)
-export interface Review {
-  id: string;
-  productId: string;
-  userId: string;
-  user: UserSummary;
-  rating: number; // 1-5
-  comment: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Search related types
-export interface SearchFilters {
-  category?: string;
+export interface QueryObject {
+  name?: string;
   minPrice?: number;
   maxPrice?: number;
-  brand?: string;
-  condition?: string;
+  negotiable?: boolean; // default true in backend
+  sortBy?: string;
+  isDescending?: boolean; // default false in backend
+  condition?: ProductCondition;
   location?: string;
-  rating?: number;
-  sortBy?: "price" | "date" | "relevance";
-  sortOrder?: "asc" | "desc";
+  sellerId?: string;
+  categoryId?: string;
+  pageNumber?: number; // default 1 in backend
+  pageSize?: number; // default 20 in backend
 }
 
-export interface SearchResult {
-  products: Product[];
-  totalCount: number;
-  currentPage: number;
-  pageSize: number;
-  totalPages: number;
-  filters?: SearchFilters;
+// ============================================
+// UPLOAD DTOs
+// ============================================
+
+export interface UploadResponse {
+  urls: string[];
 }
 
-// Authentication types for NextAuth custom adapter
-export interface Account {
-  id: string;
-  userId: string;
-  type: string;
-  provider: string;
-  providerAccountId: string;
-  refresh_token?: string | null;
-  access_token?: string | null;
-  expires_at?: number | null;
-  token_type?: string | null;
-  scope?: string | null;
-  id_token?: string | null;
-  session_state?: string | null;
+// ============================================
+// UTILITY TYPES
+// ============================================
+
+// Helper to parse JSON strings from backend
+export function parseProductDto(dto: ProductDto): Product {
+  return {
+    ...dto,
+    images: JSON.parse(dto.images || "[]"),
+    tags: JSON.parse(dto.tags || "[]"),
+  };
 }
 
-export interface Session {
-  id: string;
-  sessionToken: string;
-  userId: string;
-  expires: string; // ISO date string
-}
-
-export interface VerificationToken {
-  identifier: string;
-  token: string;
-  expires: string; // ISO date string
-}
-
-// API Response wrapper (if .NET uses standard response format)
-export interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-  errors?: string[];
-}
-
-// Pagination helper
-export interface PaginatedResponse<T> {
-  items: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
+// Helper to stringify arrays for backend
+export function stringifyProductData(data: {
+  images?: string[];
+  tags?: string[];
+  [key: string]: any;
+}) {
+  return {
+    ...data,
+    images: data.images ? JSON.stringify(data.images) : "[]",
+    tags: data.tags ? JSON.stringify(data.tags) : "[]",
+  };
 }
 
 // Error response from API
