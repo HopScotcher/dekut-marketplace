@@ -25,7 +25,7 @@ export function useSearch() {
         category: filters.category,
         minPrice: filters.minPrice,
         maxPrice: filters.maxPrice,
-        condition: filters.condition ? [filters.condition] : undefined,
+        condition: filters.condition || undefined,
         location: filters.location,
         sortBy: sortBy.value as "price" | "date" | "relevance",
         sortOrder: sortBy.direction,

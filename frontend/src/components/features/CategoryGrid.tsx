@@ -1,9 +1,9 @@
-import { Category } from '@/lib/types';
+import { CategoryDto } from '@/lib/types';
 import CategoryCard from '@/components/common/CategoryCard';
 import EmptyState from '@/components/common/EmptyState';
 
 interface CategoryGridProps {
-  categories: Category[];
+  categories: CategoryDto[];
   loading?: boolean;
 }
 

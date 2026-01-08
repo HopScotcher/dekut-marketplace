@@ -5,16 +5,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import ProductGrid from '@/components/features/ProductGrid';
 import CategoryGrid from '@/components/features/CategoryGrid';
 import SearchBar from '@/components/common/SearchBar';
-import { mockProducts, mockCategories } from '@/data/mock-data';
+import { getProducts } from '@/services/productService';
+import { getAllCategories } from '@/services/categoryService';
 import Link from 'next/link';
 import { ArrowRight, Star, Shield, Truck } from 'lucide-react';
 
-export default function HomePage() {
-  // Get featured products (first 4)
-  const featuredProducts = mockProducts.slice(0, 4);
+export default async function HomePage() {
+  // Fetch featured products and categories from backend
+  const { products } = await getProducts({ PageSize: 8, PageNumber: 1 });
+  const categories = await getAllCategories();
   
-  // Get featured categories (first 3)
-  const featuredCategories = mockCategories.slice(0, 3);
+  const featuredProducts = products.slice(0, 4);
+  const featuredCategories = categories.slice(0, 3);
 
   return (
     <div className="space-y-16">
@@ -96,7 +98,7 @@ export default function HomePage() {
             </Link>
           </Button>
         </div>
-        <ProductGrid />
+        <ProductGrid products={featuredProducts} />
       </section>
     </div>
   );

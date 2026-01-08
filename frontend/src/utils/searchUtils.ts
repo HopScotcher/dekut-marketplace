@@ -15,7 +15,7 @@ export function filterProducts(
 ): Product[] {
   return products.filter((product) => {
     // Category filter
-    if (filters.category && product.category !== filters.category) {
+    if (filters.category && product.categoryId !== filters.category) {
       return false;
     }
 

@@ -1,16 +1,19 @@
 import React, { createContext, useContext } from "react";
-import { User } from "@/lib/types";
+import { UserDto } from "@/lib/types";
 
-const MOCK_USER: User = {
+const MOCK_USER: UserDto = {
   id: "user-123",
   name: "Jane Doe",
   email: "jane.doe@example.com",
-  avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+  phoneNumber: "+254700000000",
+  image: "https://randomuser.me/api/portraits/women/44.jpg",
+  verified: false,
+  createdAt: new Date().toISOString(),
 };
 
 interface UserContextType {
-  currentUser: User;
-  getCurrentUser: () => User;
+  currentUser: UserDto;
+  getCurrentUser: () => UserDto;
   isCurrentUser: (userId: string) => boolean;
 }
 

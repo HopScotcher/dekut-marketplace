@@ -2,10 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Category } from '@/lib/types';
+import { CategoryDto } from '@/lib/types';
 
 interface CategoryCardProps {
-  category: Category;
+  category: CategoryDto;
 }
 
 export default function CategoryCard({ category }: CategoryCardProps) {
@@ -13,14 +13,9 @@ export default function CategoryCard({ category }: CategoryCardProps) {
     <Link href={`/categories/${category.slug}`}>
       <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer">
         <CardContent className="p-0">
-          {/* Category Image */}
-          <div className="relative aspect-video overflow-hidden rounded-t-lg">
-            <Image
-              src={category.image}
-              alt={category.name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
-            />
+          {/* Category Icon */}
+          <div className="relative aspect-video overflow-hidden rounded-t-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+            <div className="text-6xl">{category.icon || '📦'}</div>
           </div>
 
           {/* Category Info */}
