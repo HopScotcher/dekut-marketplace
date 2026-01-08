@@ -11,11 +11,75 @@ import {
 } from "@/lib/types";
 
 /**
+ * Query parameters that match backend QueryObject
+ */
+export interface ProductQueryParams {
+  Name?: string;
+  MinPrice?: number;
+  MaxPrice?: number;
+  Negotiable?: boolean;
+  SortBy?: string;
+  IsDescending?: boolean;
+  Condition?: string;
+  Location?: string;
+  SellerId?: string;
+  CategoryId?: string;
+  PageNumber?: number;
+  PageSize?: number;
+}
+
+export interface ProductQueryResult {
+  products: Product[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
+ * Get products with filtering, sorting, and pagination
+ * Maps to GET /api/products with QueryObject parameters
+ */
+export async function getProducts(
+  params: ProductQueryParams = {}
+): Promise<ProductQueryResult> {
+  const response = await api.get<Product[]>("/api/products", {
+    params: {
+      Name: params.Name,
+      MinPrice: params.MinPrice,
+      MaxPrice: params.MaxPrice,
+      Negotiable: params.Negotiable,
+      SortBy: params.SortBy,
+      IsDescending: params.IsDescending ?? false,
+      Condition: params.Condition,
+      Location: params.Location,
+      SellerId: params.SellerId,
+      CategoryId: params.CategoryId,
+      PageNumber: params.PageNumber ?? 1,
+      PageSize: params.PageSize ?? 20,
+    },
+  });
+
+  // Backend returns array directly, calculate pagination
+  const pageSize = params.PageSize ?? 20;
+  const currentPage = params.PageNumber ?? 1;
+
+  return {
+    products: response,
+    totalCount: response.length,
+    currentPage: currentPage,
+    pageSize: pageSize,
+    totalPages: Math.ceil(response.length / pageSize),
+  };
+}
+
+/**
  * Get all published products
  * @returns Promise<Product[]>
  */
 export async function getAllProducts(): Promise<Product[]> {
-  return api.get<Product[]>("/api/products");
+  const result = await getProducts({ PageSize: 100 });
+  return result.products;
 }
 
 /**
@@ -42,30 +106,23 @@ export async function getProductById(
 export async function getProductsByCategory(
   categoryId: string
 ): Promise<Product[]> {
-  return api.get<Product[]>(`/api/products`, {
-    params: { category: categoryId },
-  });
+  const result = await getProducts({ CategoryId: categoryId, PageSize: 100 });
+  return result.products;
 }
 
 /**
  * Get products by seller/user
  * @param userId - The user ID to filter by
- * @param status - Optional status filter ('draft' | 'published')
  * @returns Promise<Product[]>
  */
-export async function getProductsByUser(
-  userId: string,
-  status?: "draft" | "published"
-): Promise<Product[]> {
-  return api.get<Product[]>(`/api/users/${userId}/products`, {
-    params: status ? { status } : undefined,
-  });
+export async function getProductsByUser(userId: string): Promise<Product[]> {
+  const result = await getProducts({ SellerId: userId, PageSize: 100 });
+  return result.products;
 }
 
 /**
  * Search products with filters and sorting
- * Uses .NET backend with SQL full-text search
- * @param query - Search query string
+ * Uses .NET backend with QueryObject parameters
  * @param options - Filter and sort options
  * @returns Promise with products and pagination info
  */
@@ -74,72 +131,28 @@ export interface ProductSearchOptions {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
-  condition?: string[];
+  condition?: string;
   location?: string;
-  sortBy?: "price" | "date" | "relevance";
+  sortBy?: string;
   sortOrder?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 }
 
-export interface ProductSearchResult {
-  products: Product[];
-  totalCount: number;
-  currentPage: number;
-  pageSize: number;
-  totalPages: number;
-}
-
 export async function searchProducts(
   options: ProductSearchOptions = {}
-): Promise<ProductSearchResult> {
-  const params = new URLSearchParams();
-
-  if (options.query) params.append("q", options.query);
-  if (options.category) params.append("category", options.category);
-  if (options.minPrice !== undefined)
-    params.append("minPrice", options.minPrice.toString());
-  if (options.maxPrice !== undefined)
-    params.append("maxPrice", options.maxPrice.toString());
-  if (options.condition && options.condition.length > 0) {
-    options.condition.forEach((c) => params.append("condition", c));
-  }
-  if (options.location) params.append("location", options.location);
-  if (options.sortBy) params.append("sortBy", options.sortBy);
-  if (options.sortOrder) params.append("sortOrder", options.sortOrder);
-  if (options.page) params.append("page", options.page.toString());
-  if (options.pageSize) params.append("pageSize", options.pageSize.toString());
-
-  return api.get<ProductSearchResult>(
-    `/api/products/search?${params.toString()}`
-  );
-}
-
-/**
- * Get featured products (high rating or recent)
- * @param limit - Number of products to return
- * @returns Promise<Product[]>
- */
-export async function getFeaturedProducts(
-  limit: number = 8
-): Promise<Product[]> {
-  return api.get<Product[]>("/api/products/featured", {
-    params: { limit },
-  });
-}
-
-/**
- * Get related products (same category, excluding current product)
- * @param productId - Current product ID to exclude
- * @param limit - Number of related products to return
- * @returns Promise<Product[]>
- */
-export async function getRelatedProducts(
-  productId: string,
-  limit: number = 4
-): Promise<Product[]> {
-  return api.get<Product[]>(`/api/products/${productId}/related`, {
-    params: { limit },
+): Promise<ProductQueryResult> {
+  return getProducts({
+    Name: options.query,
+    CategoryId: options.category,
+    MinPrice: options.minPrice,
+    MaxPrice: options.maxPrice,
+    Condition: options.condition,
+    Location: options.location,
+    SortBy: options.sortBy,
+    IsDescending: options.sortOrder === "desc",
+    PageNumber: options.page,
+    PageSize: options.pageSize,
   });
 }
 
@@ -158,17 +171,6 @@ export async function getFilteredProducts(
     totalCount: result.totalCount,
   };
 }
-
-// /**
-//  * Check if product exists
-//  * @param productId - Product ID to check
-//  * @returns Promise<boolean>
-//  */
-// export async function productExists(productId: string): Promise<boolean> {
-//   await simulateDelay(100); // Shorter delay for existence check
-
-//   return mockProducts.some((p) => p.id === productId);
-// }
 
 /**
  * Upload multiple product images

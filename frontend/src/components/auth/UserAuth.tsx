@@ -11,10 +11,11 @@ import {
   getStoredUser,
   logoutUser,
 } from "@/services/authService";
+import { UserDto } from "@/lib/types";
 import { toast } from "sonner";
 
 export default function UserAuth() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -120,7 +121,7 @@ export default function UserAuth() {
 
         {/* User name - hidden on mobile */}
         <span className="hidden sm:block max-w-[120px] truncate">
-          {session.user?.name || session.user?.email?.split("@")[0] || "User"}
+          {user?.name || user?.email?.split("@")[0] || "User"}
         </span>
 
         <ChevronDownIcon
@@ -136,11 +137,9 @@ export default function UserAuth() {
           {/* User info header */}
           <div className="px-4 py-3 border-b border-gray-100">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {session.user?.name || "User"}
+              {user?.name || "User"}
             </p>
-            <p className="text-sm text-gray-500 truncate">
-              {session.user?.email}
-            </p>
+            <p className="text-sm text-gray-500 truncate">{user?.email}</p>
           </div>
 
           {/* Navigation links */}

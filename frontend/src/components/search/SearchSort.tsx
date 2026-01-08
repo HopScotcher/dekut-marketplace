@@ -1,68 +1,57 @@
+"use client";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-'use client'
-
-import { ChevronDownIcon } from '@heroicons/react/24/outline'
-import { useSearchStore } from '@/stores/searchStore'
-import Select from 'react-select'
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const sortOptions = [
-  { value: 'relevance', label: 'Most Relevant', direction: 'desc' as const },
-  { value: 'price', label: 'Price: Low to High', direction: 'asc' as const },
-  { value: 'price', label: 'Price: High to Low', direction: 'desc' as const },
-  { value: 'date', label: 'Newest First', direction: 'desc' as const },
-  { value: 'date', label: 'Oldest First', direction: 'asc' as const },
-  { value: 'popularity', label: 'Most Popular', direction: 'desc' as const }
-]
+  { value: "createdAt|desc", label: "Newest First" },
+  { value: "createdAt|asc", label: "Oldest First" },
+  { value: "price|asc", label: "Price: Low to High" },
+  { value: "price|desc", label: "Price: High to Low" },
+  { value: "name|asc", label: "Name: A to Z" },
+  { value: "name|desc", label: "Name: Z to A" },
+];
 
 export default function SearchSort() {
-  const { sortBy, setSortBy, totalResults } = useSearchStore()
-  
-  type SortOption = {
-    value: 'relevance' | 'price' | 'date' | 'popularity'
-    label: string
-    direction: 'asc' | 'desc'
-  }
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const handleSortChange = (
-    option: typeof sortOptions[number] | null
-  ) => {
-    if (option) {
-      setSortBy({
-        value: option.value as SortOption['value'],
-        label: option.label,
-        direction: option.direction as SortOption['direction']
-      })
-    }
-  }
-  
-  const currentSortOption = sortOptions.find(
-    option => option.value === sortBy.value && option.direction === sortBy.direction
-  )
-  
+  // Get current sort from URL
+  const sortBy = searchParams.get("sortBy") || "createdAt";
+  const isDescending = searchParams.get("isDescending") === "true";
+  const currentSort = `${sortBy}|${isDescending ? "desc" : "asc"}`;
+
+  const handleSortChange = (value: string) => {
+    const [newSortBy, direction] = value.split("|");
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.set("sortBy", newSortBy);
+    params.set("isDescending", direction === "desc" ? "true" : "false");
+
+    router.push(`/search?${params.toString()}`);
+  };
+
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm text-gray-600">
-        {totalResults} {totalResults === 1 ? 'result' : 'results'}
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-700">Sort by:</span>
-        <div className="min-w-[200px]">
-          <Select
-            value={currentSortOption}
-            onChange={handleSortChange}
-            options={sortOptions}
-            isSearchable={false}
-            className="text-sm"
-            classNamePrefix="react-select"
-            menuPortalTarget={document.body}
-            styles={{
-              menuPortal: (base) => ({ ...base, zIndex: 9999 })
-            }}
-          />
-        </div>
-      </div>
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-600">Sort by:</span>
+      <Select value={currentSort} onValueChange={handleSortChange}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {sortOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
-  )
+  );
 }

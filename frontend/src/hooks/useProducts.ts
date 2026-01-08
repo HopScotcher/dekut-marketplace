@@ -1,94 +1,113 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getProductById } from "@/services/productService";
+import axios from "axios";
 
 // Query all published products
 export function useProducts() {
   return useQuery({
-    queryKey: ['products'],
-    queryFn: async () => (await axios.get('/api/products')).data,
-  })
+    queryKey: ["products"],
+    queryFn: async () => (await axios.get("/api/products")).data,
+  });
 }
 
-// Query single product
+// Query single product - integrated with backend
 export function useProduct(id: string) {
   return useQuery({
-    queryKey: ['product', id],
-    queryFn: async () => (await axios.get(`/api/products/${id}`)).data,
+    queryKey: ["product", id],
+    queryFn: async () => {
+      const product = await getProductById(id);
+      if (!product) {
+        throw new Error("Product not found");
+      }
+      return product;
+    },
     enabled: !!id,
-  })
+    retry: false, // Don't retry on 404
+  });
 }
 
 // Query user's products by status
 export function useUserProducts(userId: string, status?: string) {
   return useQuery({
-    queryKey: ['user-products', userId, status],
+    queryKey: ["user-products", userId, status],
     queryFn: async () => {
-      const url = status ? `/api/users/${userId}/products?status=${status}` : `/api/users/${userId}/products`
-      return (await axios.get(url)).data
+      const url = status
+        ? `/api/users/${userId}/products?status=${status}`
+        : `/api/users/${userId}/products`;
+      return (await axios.get(url)).data;
     },
     enabled: !!userId,
-  })
+  });
 }
 
 // Mutation for product creation
 export function useCreateProduct() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Record<string, unknown>) => (await axios.post('/api/products', data)).data,
+    mutationFn: async (data: Record<string, unknown>) =>
+      (await axios.post("/api/products", data)).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['user-products'] })
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["user-products"] });
     },
-  })
+  });
 }
 
 // Mutation for product updates
 export function useUpdateProduct() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; [key: string]: unknown }) =>
-      (await axios.put(`/api/products/${id}`, data)).data,
+    mutationFn: async ({
+      id,
+      ...data
+    }: {
+      id: string;
+      [key: string]: unknown;
+    }) => (await axios.put(`/api/products/${id}`, data)).data,
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['product', variables.id] })
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['user-products'] })
+      queryClient.invalidateQueries({ queryKey: ["product", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["user-products"] });
     },
-  })
+  });
 }
 
 // Mutation for product deletion
 export function useDeleteProduct() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => (await axios.delete(`/api/products/${id}`)).data,
+    mutationFn: async (id: string) =>
+      (await axios.delete(`/api/products/${id}`)).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['user-products'] })
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["user-products"] });
     },
-  })
+  });
 }
 
 // Mutation for bulk deletion
 export function useBulkDeleteProducts() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (ids: string[]) => (await axios.delete('/api/products/bulk', { data: { ids } })).data,
+    mutationFn: async (ids: string[]) =>
+      (await axios.delete("/api/products/bulk", { data: { ids } })).data,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['user-products'] })
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["user-products"] });
     },
-  })
+  });
 }
 
 // Mutation for status changes
 export function useToggleProductStatus() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => (await axios.patch(`/api/products/${id}`)).data,
+    mutationFn: async (id: string) =>
+      (await axios.patch(`/api/products/${id}`)).data,
     onSuccess: (data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['product', id] })
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['user-products'] })
+      queryClient.invalidateQueries({ queryKey: ["product", id] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["user-products"] });
     },
-  })
+  });
 }
