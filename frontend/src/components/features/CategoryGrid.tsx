@@ -1,13 +1,16 @@
-import { CategoryDto } from '@/lib/types';
-import CategoryCard from '@/components/common/CategoryCard';
-import EmptyState from '@/components/common/EmptyState';
+import { CategoryDto } from "@/lib/types";
+import CategoryCard from "@/components/common/CategoryCard";
+import EmptyState from "@/components/common/EmptyState";
 
 interface CategoryGridProps {
   categories: CategoryDto[];
   loading?: boolean;
 }
 
-export default function CategoryGrid({ categories, loading = false }: CategoryGridProps) {
+export default function CategoryGrid({
+  categories,
+  loading = false,
+}: CategoryGridProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -25,7 +28,13 @@ export default function CategoryGrid({ categories, loading = false }: CategoryGr
   }
 
   if (categories.length === 0) {
-    return <EmptyState type="generic" title="No Categories" description="Categories will appear here." />;
+    return (
+      <EmptyState
+        type="generic"
+        title="No Categories"
+        description="Categories will appear here."
+      />
+    );
   }
 
   return (
@@ -36,5 +45,3 @@ export default function CategoryGrid({ categories, loading = false }: CategoryGr
     </div>
   );
 }
-
- 

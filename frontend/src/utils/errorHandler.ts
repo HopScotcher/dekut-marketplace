@@ -72,10 +72,7 @@ export function handleApiError(
 /**
  * Handle success notifications
  */
-export function showSuccess(
-  message: string,
-  description?: string
-): void {
+export function showSuccess(message: string, description?: string): void {
   toast.success(message, {
     description,
   });

@@ -1,9 +1,9 @@
-import CategoryGrid from '@/components/features/CategoryGrid';
-import { getAllCategories } from '@/services/categoryService';
+import CategoryGrid from "@/components/features/CategoryGrid";
+import { getAllCategories } from "@/services/categoryService";
 
 export default async function CategoriesPage() {
   const categories = await getAllCategories();
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">

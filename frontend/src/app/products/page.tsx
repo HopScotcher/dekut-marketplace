@@ -1,11 +1,13 @@
-import ProductGrid from '@/components/features/ProductGrid';
-import { getProducts } from '@/services/productService';
- 
+import ProductGrid from "@/components/features/ProductGrid";
+import { getProducts } from "@/services/productService";
 
 export default async function ProductsPage() {
   // Fetch all products from backend
-  const { products, totalCount } = await getProducts({ PageSize: 100, PageNumber: 1 });
-  
+  const { products, totalCount } = await getProducts({
+    PageSize: 100,
+    PageNumber: 1,
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">

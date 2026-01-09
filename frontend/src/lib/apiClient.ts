@@ -49,9 +49,55 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor - Handle errors globally
+/**
+ * Transform backend JSON strings to arrays for images and tags
+ * Backend returns these as JSON strings, we need them as arrays
+ */
+function transformProductData(data: any): any {
+  if (!data) return data;
+
+  // Handle array of products
+  if (Array.isArray(data)) {
+    return data.map(transformProductData);
+  }
+
+  // Handle single product or object with images/tags
+  if (typeof data === "object") {
+    const transformed = { ...data };
+
+    // Parse images if it's a JSON string
+    if (typeof transformed.images === "string") {
+      try {
+        transformed.images = JSON.parse(transformed.images);
+      } catch (e) {
+        console.warn("Failed to parse images:", e);
+        transformed.images = [];
+      }
+    }
+
+    // Parse tags if it's a JSON string
+    if (typeof transformed.tags === "string") {
+      try {
+        transformed.tags = JSON.parse(transformed.tags);
+      } catch (e) {
+        console.warn("Failed to parse tags:", e);
+        transformed.tags = [];
+      }
+    }
+
+    return transformed;
+  }
+
+  return data;
+}
+
+// Response interceptor - Handle errors globally and transform data
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Transform product data automatically
+    response.data = transformProductData(response.data);
+    return response;
+  },
   async (error: AxiosError) => {
     // Handle different error scenarios
     if (error.response) {

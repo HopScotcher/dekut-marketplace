@@ -21,13 +21,19 @@ export default function ProductCard({
   onEdit,
   onDelete,
 }: ProductCardProps) {
+  // Fallback image if no images available
+  const imageUrl =
+    product.images && product.images.length > 0
+      ? product.images[0]
+      : "/placeholder-product.png";
+
   return (
     <Card className="group hover:shadow-lg transition-shadow duration-200">
       <CardContent className="p-0">
         {/* Product Image */}
         <div className="relative aspect-square overflow-hidden rounded-t-lg">
           <Image
-            src={product.images[0]}
+            src={imageUrl}
             alt={product.name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-200"

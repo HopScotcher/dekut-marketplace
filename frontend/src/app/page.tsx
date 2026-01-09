@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import ProductGrid from '@/components/features/ProductGrid';
-import CategoryGrid from '@/components/features/CategoryGrid';
-import SearchBar from '@/components/common/SearchBar';
-import { getProducts } from '@/services/productService';
-import { getAllCategories } from '@/services/categoryService';
-import Link from 'next/link';
-import { ArrowRight, Star, Shield, Truck } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import ProductGrid from "@/components/features/ProductGrid";
+import CategoryGrid from "@/components/features/CategoryGrid";
+import SearchBar from "@/components/common/SearchBar";
+import { getProducts } from "@/services/productService";
+import { getAllCategories } from "@/services/categoryService";
+import Link from "next/link";
+import { ArrowRight, Star, Shield, Truck } from "lucide-react";
 
 export default async function HomePage() {
   // Fetch featured products and categories from backend
   const { products } = await getProducts({ PageSize: 8, PageNumber: 1 });
   const categories = await getAllCategories();
-  
+
   const featuredProducts = products.slice(0, 4);
   const featuredCategories = categories.slice(0, 3);
 
@@ -27,7 +27,8 @@ export default async function HomePage() {
             Discover Amazing Products
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Shop from thousands of trusted sellers and find exactly what youre looking for
+            Shop from thousands of trusted sellers and find exactly what youre
+            looking for
           </p>
           <div className="max-w-md mx-auto mb-8">
             <SearchBar placeholder="What are you looking for?" />
@@ -53,21 +54,28 @@ export default async function HomePage() {
             <CardContent className="p-6 text-center">
               <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Secure Shopping</h3>
-              <p className="text-gray-600">Your data and payments are protected with industry-leading security</p>
+              <p className="text-gray-600">
+                Your data and payments are protected with industry-leading
+                security
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 text-center">
               <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Fast Delivery</h3>
-              <p className="text-gray-600">Quick and reliable shipping to your doorstep</p>
+              <p className="text-gray-600">
+                Quick and reliable shipping to your doorstep
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 text-center">
               <Star className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Quality Products</h3>
-              <p className="text-gray-600">Carefully curated products from trusted sellers</p>
+              <p className="text-gray-600">
+                Carefully curated products from trusted sellers
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -103,5 +111,3 @@ export default async function HomePage() {
     </div>
   );
 }
-
- 
