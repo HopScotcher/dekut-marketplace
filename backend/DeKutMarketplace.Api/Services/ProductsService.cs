@@ -109,6 +109,29 @@ namespace DeKutMarketplace.Api.Services
               .Where(p => p.Status == ProductStatus.Published)
               .AsQueryable();
 
+            bool isTextSearch = false;
+
+            if (!string.IsNullOrWhiteSpace(query.Name))
+            {
+                isTextSearch = true;
+
+                var searchTerm = query.Name.Trim().Replace("'", "''");
+
+                productsQuery = productsQuery.Where(p => 
+                EF.Functions.Contains(p.Name, searchTerm) || 
+                EF.Functions.Contains(p.Description, searchTerm) ||
+                EF.Functions.Contains(p.Location, searchTerm) ||
+                EF.Functions.Contains(p.Tags, searchTerm));
+
+                productsQuery = productsQuery.OrderByDescending(p => 
+                (EF.Functions.Contains(p.Name, searchTerm)? 10: 0) + 
+                (EF.Functions.Contains(p.Tags, searchTerm) ? 5 : 0) +
+                (EF.Functions.Contains(p.Description, searchTerm)? 2 : 0) +
+                (EF.Functions.Contains(p.Location, searchTerm) ? 1 : 0)
+                );
+            }
+
+              
             if (query.MinPrice.HasValue)
             {
                 productsQuery = productsQuery.Where(p => p.Price >= query.MinPrice.Value);
@@ -144,20 +167,53 @@ namespace DeKutMarketplace.Api.Services
                 productsQuery = productsQuery.Where(p => p.UserId == query.SellerId);
             }
 
+
+            if (isTextSearch)
+            {
+                
             if (!string.IsNullOrWhiteSpace(query.SortBy))
             {
+ 
                 productsQuery = query.SortBy.ToLower() switch
                 {
-                  "price" => query.IsDescending? productsQuery.OrderByDescending(p => p.Price) : productsQuery.OrderBy(p => p.Price),
-                  "name" => query.IsDescending ? productsQuery.OrderByDescending(p => p.Name) : productsQuery.OrderBy(p => p.Name),
-                  "createdat" => query.IsDescending ? productsQuery.OrderByDescending(p => p.CreatedAt) : productsQuery.OrderBy(p => p.CreatedAt),
-                  _ => productsQuery.OrderByDescending(p => p.CreatedAt)
+                  "price" => query.IsDescending? 
+                  ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.Price) : ((IOrderedQueryable<Product>)productsQuery).ThenBy(p => p.Price),
+                  "name" => query.IsDescending ? 
+                  ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.Name) : ((IOrderedQueryable<Product>)productsQuery).ThenBy(p => p.Name),
+                  "createdat" => query.IsDescending ? 
+                  ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.CreatedAt) : ((IOrderedQueryable<Product>)productsQuery).ThenBy(p => p.CreatedAt),
+                  _ => ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.CreatedAt)
                 };
             }
             else
             {
-                productsQuery = productsQuery.OrderByDescending(p => p.CreatedAt);
+                    productsQuery = ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.CreatedAt);
             }
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(query.SortBy))
+                {
+                    productsQuery = query.SortBy.ToLower() switch
+                    {
+                         "price" => query.IsDescending 
+                ? productsQuery.OrderByDescending(p => p.Price) 
+                : productsQuery.OrderBy(p => p.Price),
+            "name" => query.IsDescending 
+                ? productsQuery.OrderByDescending(p => p.Name) 
+                : productsQuery.OrderBy(p => p.Name),
+            "createdat" => query.IsDescending 
+                ? productsQuery.OrderByDescending(p => p.CreatedAt) 
+                : productsQuery.OrderBy(p => p.CreatedAt),
+            _ => productsQuery.OrderByDescending(p => p.CreatedAt)
+                    };
+                }
+                else
+                {
+                    productsQuery = productsQuery.OrderByDescending(p => p.CreatedAt);
+                }
+            }
+               
 
             var skipNumber = (query.PageNumber - 1) * query.PageSize;
             productsQuery = productsQuery.Skip(skipNumber).Take(query.PageSize);
