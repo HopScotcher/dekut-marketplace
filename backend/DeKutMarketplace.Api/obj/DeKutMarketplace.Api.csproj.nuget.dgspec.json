@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\CODING\\nextjs\\dekut-marketplace\\BACKEND\\DekutMarketplace.Api\\DeKutMarketplace.Api.csproj": {}
+    "C:\\CODING\\nextjs\\dekut-marketplace\\backend\\DeKutMarketplace.Api\\DeKutMarketplace.Api.csproj": {}
   },
   "projects": {
-    "C:\\CODING\\nextjs\\dekut-marketplace\\BACKEND\\DekutMarketplace.Api\\DeKutMarketplace.Api.csproj": {
+    "C:\\CODING\\nextjs\\dekut-marketplace\\backend\\DeKutMarketplace.Api\\DeKutMarketplace.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\CODING\\nextjs\\dekut-marketplace\\BACKEND\\DekutMarketplace.Api\\DeKutMarketplace.Api.csproj",
+        "projectUniqueName": "C:\\CODING\\nextjs\\dekut-marketplace\\backend\\DeKutMarketplace.Api\\DeKutMarketplace.Api.csproj",
         "projectName": "DeKutMarketplace.Api",
-        "projectPath": "C:\\CODING\\nextjs\\dekut-marketplace\\BACKEND\\DekutMarketplace.Api\\DeKutMarketplace.Api.csproj",
+        "projectPath": "C:\\CODING\\nextjs\\dekut-marketplace\\backend\\DeKutMarketplace.Api\\DeKutMarketplace.Api.csproj",
         "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
-        "outputPath": "C:\\CODING\\nextjs\\dekut-marketplace\\BACKEND\\DekutMarketplace.Api\\obj\\",
+        "outputPath": "C:\\CODING\\nextjs\\dekut-marketplace\\backend\\DeKutMarketplace.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

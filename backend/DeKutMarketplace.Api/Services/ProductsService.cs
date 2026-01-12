@@ -103,34 +103,36 @@ namespace DeKutMarketplace.Api.Services
 
         public async Task<List<ProductDto>> GetAllProductsAsync(QueryObject query)
         {
-              var productsQuery =  _dbContext.Products
-              .Include(p => p.Category)
-              .Include(p => p.User)
-              .Where(p => p.Status == ProductStatus.Published)
-              .AsQueryable();
+            var productsQuery = _dbContext.Products
+        .Include(p => p.Category)
+            .ThenInclude(c => c.ParentCategory)  // Load parent category
+        .Include(p => p.User)
+        .Where(p => p.Status == ProductStatus.Published)
+        .AsQueryable();
 
-            bool isTextSearch = false;
+        bool isTextSearch = false;
 
-            if (!string.IsNullOrWhiteSpace(query.Name))
+        if (!string.IsNullOrWhiteSpace(query.Name))
             {
-                isTextSearch = true;
+        isTextSearch = true;
+        var searchTerm = query.Name.Trim().ToLower();
 
-                var searchTerm = query.Name.Trim().Replace("'", "''");
+        productsQuery = productsQuery.Where(p => 
+            p.Name.ToLower().Contains(searchTerm) ||
+            p.Description.ToLower().Contains(searchTerm) ||
+            p.Location.ToLower().Contains(searchTerm) ||
+            (p.Tags != null && p.Tags.ToLower().Contains(searchTerm)) ||
 
-                productsQuery = productsQuery.Where(p => 
-                EF.Functions.Contains(p.Name, searchTerm) || 
-                EF.Functions.Contains(p.Description, searchTerm) ||
-                EF.Functions.Contains(p.Location, searchTerm) ||
-                EF.Functions.Contains(p.Tags, searchTerm));
+            p.Category.Name.ToLower().Contains(searchTerm) ||
+            (p.Category.Description != null && p.Category.Description.ToLower().Contains(searchTerm)) ||
+            (p.Category.ParentCategory != null && p.Category.ParentCategory.Name.ToLower().Contains(searchTerm)) ||
+            (p.Category.ParentCategory != null && p.Category.ParentCategory.Description != null && 
+            p.Category.ParentCategory.Description.ToLower().Contains(searchTerm))
+ 
+        );
 
-                productsQuery = productsQuery.OrderByDescending(p => 
-                (EF.Functions.Contains(p.Name, searchTerm)? 10: 0) + 
-                (EF.Functions.Contains(p.Tags, searchTerm) ? 5 : 0) +
-                (EF.Functions.Contains(p.Description, searchTerm)? 2 : 0) +
-                (EF.Functions.Contains(p.Location, searchTerm) ? 1 : 0)
-                );
-            }
-
+        productsQuery = productsQuery.OrderByDescending(p => p.CreatedAt);
+}
               
             if (query.MinPrice.HasValue)
             {
@@ -168,30 +170,9 @@ namespace DeKutMarketplace.Api.Services
             }
 
 
-            if (isTextSearch)
+            if (!isTextSearch)
             {
                 
-            if (!string.IsNullOrWhiteSpace(query.SortBy))
-            {
- 
-                productsQuery = query.SortBy.ToLower() switch
-                {
-                  "price" => query.IsDescending? 
-                  ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.Price) : ((IOrderedQueryable<Product>)productsQuery).ThenBy(p => p.Price),
-                  "name" => query.IsDescending ? 
-                  ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.Name) : ((IOrderedQueryable<Product>)productsQuery).ThenBy(p => p.Name),
-                  "createdat" => query.IsDescending ? 
-                  ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.CreatedAt) : ((IOrderedQueryable<Product>)productsQuery).ThenBy(p => p.CreatedAt),
-                  _ => ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.CreatedAt)
-                };
-            }
-            else
-            {
-                    productsQuery = ((IOrderedQueryable<Product>)productsQuery).ThenByDescending(p => p.CreatedAt);
-            }
-            }
-            else
-            {
                 if (!string.IsNullOrWhiteSpace(query.SortBy))
                 {
                     productsQuery = query.SortBy.ToLower() switch
@@ -213,12 +194,34 @@ namespace DeKutMarketplace.Api.Services
                     productsQuery = productsQuery.OrderByDescending(p => p.CreatedAt);
                 }
             }
-               
+                
 
             var skipNumber = (query.PageNumber - 1) * query.PageSize;
             productsQuery = productsQuery.Skip(skipNumber).Take(query.PageSize);
 
             var products = await productsQuery.ToListAsync();
+
+            // in-memory relevance ranking for text search
+
+            if(isTextSearch && !string.IsNullOrWhiteSpace(query.Name))
+            {
+                var searchTerm = query.Name.Trim().ToLower();
+
+                products = products.OrderByDescending(p =>
+                {
+                    int score = 0;
+                    if(p.Name.ToLower().Contains(searchTerm)) score += 10;
+                    if (p.Category?.Name.ToLower().Contains(searchTerm) == true) score += 8;
+                    if (p.Tags?.ToLower().Contains(searchTerm) == true) score += 5;
+                    if (p.Category?.ParentCategory?.Name.ToLower().Contains(searchTerm) == true) score += 4;
+                    if (p.Category?.Description?.ToLower().Contains(searchTerm) == true) score += 3;
+                    if (p.Description.ToLower().Contains(searchTerm)) score += 2;
+                    if (p.Category?.ParentCategory?.Description?.ToLower().Contains(searchTerm) == true) score += 2;
+                    if (p.Location.ToLower().Contains(searchTerm)) score += 1;
+
+                    return score;
+                }).ToList();
+            }
 
             return products.Select(p => p.ToProductDto()).ToList();
         }
@@ -297,5 +300,7 @@ namespace DeKutMarketplace.Api.Services
 
         return updatedProduct?.ToProductDto();
         }
+    
+    
     }
 }
