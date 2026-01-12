@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using DeKutMarketplace.Api.Data;
@@ -196,34 +197,89 @@ namespace DeKutMarketplace.Api.Services
             }
                 
 
-            var skipNumber = (query.PageNumber - 1) * query.PageSize;
-            productsQuery = productsQuery.Skip(skipNumber).Take(query.PageSize);
+            // Execute query with pagination
+var skipNumber = (query.PageNumber - 1) * query.PageSize;
 
-            var products = await productsQuery.ToListAsync();
+// Start performance timer
+var stopwatch = Stopwatch.StartNew();
 
-            // in-memory relevance ranking for text search
+// For text search: load more records for scoring, then trim
+// For non-search: pagination already applied in query
+List<Product> products;
 
-            if(isTextSearch && !string.IsNullOrWhiteSpace(query.Name))
-            {
-                var searchTerm = query.Name.Trim().ToLower();
+if (isTextSearch && !string.IsNullOrWhiteSpace(query.Name))
+{
+    // Load 5x the page size to have enough for relevance sorting
+    // This balances memory usage with result quality
+    var searchPageSize = query.PageSize * 5;
+    var searchQuery = productsQuery.Skip(0).Take(searchPageSize);
+    
+    products = await searchQuery.ToListAsync();
+    
+    stopwatch.Stop();
+    var executionTime = stopwatch.ElapsedMilliseconds;
+    
+    _logger.LogInformation(
+        "Search query executed in {ExecutionTime}ms | " +
+        "SearchTerm={SearchTerm}, LoadedCount={LoadedCount}, PageSize={PageSize}",
+        executionTime,
+        query.Name,
+        products.Count,
+        query.PageSize
+    );
 
-                products = products.OrderByDescending(p =>
-                {
-                    int score = 0;
-                    if(p.Name.ToLower().Contains(searchTerm)) score += 10;
-                    if (p.Category?.Name.ToLower().Contains(searchTerm) == true) score += 8;
-                    if (p.Tags?.ToLower().Contains(searchTerm) == true) score += 5;
-                    if (p.Category?.ParentCategory?.Name.ToLower().Contains(searchTerm) == true) score += 4;
-                    if (p.Category?.Description?.ToLower().Contains(searchTerm) == true) score += 3;
-                    if (p.Description.ToLower().Contains(searchTerm)) score += 2;
-                    if (p.Category?.ParentCategory?.Description?.ToLower().Contains(searchTerm) == true) score += 2;
-                    if (p.Location.ToLower().Contains(searchTerm)) score += 1;
+    // Calculate scores and sort by relevance
+    var searchTerm = query.Name.Trim().ToLower();
+    var productsWithScores = products
+        .Select(p => new { Product = p, Score = CalculateRelevanceScore(p, searchTerm) })
+        .OrderByDescending(x => x.Score)
+        .ThenByDescending(x => x.Product.CreatedAt)  
+        .Skip(skipNumber)  
+        .Take(query.PageSize)
+        .ToList();
 
-                    return score;
-                }).ToList();
-            }
+    
+    return productsWithScores.Select(x =>
+    {
+        var dto = x.Product.ToProductDto();
+        dto.SearchScore = x.Score;
+        return dto;
+    }).ToList();
+}
+else
+{
+    // Non-search query: pagination already in query
+    productsQuery = productsQuery.Skip(skipNumber).Take(query.PageSize);
+    products = await productsQuery.ToListAsync();
+    
+    stopwatch.Stop();
+    var executionTime = stopwatch.ElapsedMilliseconds;
+    
+    if (executionTime > 200)
+    {
+        _logger.LogWarning(
+            "Slow product query: {ExecutionTime}ms | " +
+            "Filters: MinPrice={MinPrice}, MaxPrice={MaxPrice}, " +
+            "Category={CategoryId}, Location={Location}, ResultCount={Count}",
+            executionTime,
+            query.MinPrice,
+            query.MaxPrice,
+            query.CategoryId,
+            query.Location,
+            products.Count
+        );
+    }
+    else
+    {
+        _logger.LogInformation(
+            "Product query executed in {ExecutionTime}ms | ResultCount={Count}",
+            executionTime,
+            products.Count
+        );
+    }
 
-            return products.Select(p => p.ToProductDto()).ToList();
+    return products.Select(p => p.ToProductDto()).ToList();
+}
         }
 
         public async Task<ProductDto?> GetProductByIdAsync(string id)
@@ -301,6 +357,63 @@ namespace DeKutMarketplace.Api.Services
         return updatedProduct?.ToProductDto();
         }
     
+
+        private int CalculateRelevanceScore(Product product, string searchTerm)
+        {
+            int score = 0;
+
+            if(product.Name.ToLower() == searchTerm)
+            {
+                score += 15;
+            }else if (product.Name.ToLower().Contains(searchTerm))
+            {
+                score += 10;
+            }
+
+            if (product.Category?.Name.ToLower().Contains(searchTerm) == true)
+        score += 8;
+
+    // Tags - Enhanced scoring with exact/partial matching
+    if (!string.IsNullOrEmpty(product.Tags))
+    {
+        try
+        {
+            var tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(product.Tags);
+            if (tags != null)
+            {
+                // Exact tag match (6 points)
+                if (tags.Any(t => t.ToLower() == searchTerm))
+                    score += 6;
+                // Partial tag match (4 points)
+                else if (tags.Any(t => t.ToLower().Contains(searchTerm)))
+                    score += 4;
+            }
+        }
+        catch
+        {
+            // Fallback: search raw JSON string (3 points)
+            if (product.Tags.ToLower().Contains(searchTerm))
+                score += 3;
+        }
+        }
+             
+            if (product.Category?.ParentCategory?.Name.ToLower().Contains(searchTerm) == true)
+                score += 4;
+             
+            if (product.Category?.Description?.ToLower().Contains(searchTerm) == true)
+                score += 3;
+             
+            if (product.Description.ToLower().Contains(searchTerm))
+                score += 2;
+
+            if (product.Category?.ParentCategory?.Description?.ToLower().Contains(searchTerm) == true)
+                score += 2;
+             
+            if (product.Location.ToLower().Contains(searchTerm))
+                score += 1;
+
+            return score;
+        }
     
     }
 }
